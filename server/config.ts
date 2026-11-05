@@ -319,6 +319,15 @@ const threadsPatchSchema = threadsConfigSchema.extend({
   eventLogMaxBytes: threadsConfigSchema.shape.eventLogMaxBytes.nullable(),
   eventLogRetentionDays: threadsConfigSchema.shape.eventLogRetentionDays.nullable(),
 });
+const memoryEmbeddingSchema = z.object({
+  /** Off unless enabled: memory text leaves this machine for the configured endpoint. */
+  enabled: z.boolean().optional(),
+  url: optionalText,
+  model: optionalText,
+  key: optionalText,
+  dimensions: z.number().int().min(64).max(4096).optional(),
+  timeoutMs: z.number().int().min(200).max(15000).optional(),
+}).strict();
 const appConfigSchema = z.object({
   /** Set only by the verified domain endpoint, never by a config patch. */
   customDomain: z.string().optional(),
@@ -438,6 +447,7 @@ const appConfigSchema = z.object({
   decisions: z.object({ retentionDays: z.number().int().min(1).max(3650).optional() }).strict().optional(),
   loopGuard: loopGuardConfigSchema.optional(),
   safetyFloor: z.object({ enabled: z.boolean().optional() }).strict().optional(), // off by default: safetyFloorEnabled in server/safety-floor-gate.ts
+  memoryEmbedding: memoryEmbeddingSchema.optional(),
   localVm: localVmConfigSchema.optional(),
   features: featureConfigSchema.optional(),
   onboarding: onboardingConfigSchema.optional(),
@@ -466,6 +476,8 @@ export interface AppConfig extends HelperConfig {
   signIn?: { admins?: string[]; members?: string[] };
   /** Preferred selection for newly created bots; existing bots keep theirs. */
   defaultModelSelection?: ModelSelection;
+  /** Optional semantic recall over memory files; off unless enabled. Sends memory text to the configured endpoint. */
+  memoryEmbedding?: { enabled?: boolean; url?: string; model?: string; key?: string; dimensions?: number; timeoutMs?: number };
   /** Off by default; one backup attempt only before any work starts. */
   automaticRecovery?: { enabled: boolean; backup?: ModelSelection };
   cacheKeepWarm?: { enabled: boolean; windowMinutes?: number };
@@ -804,6 +816,10 @@ export function loadConfig(): AppConfig {
     if (process.env.OMB_SIGNIN_EMAILS !== undefined) cfg.signIn.admins = splitEmails(process.env.OMB_SIGNIN_EMAILS);
     if (process.env.OMB_SIGNIN_MEMBER_EMAILS !== undefined) cfg.signIn.members = splitEmails(process.env.OMB_SIGNIN_MEMBER_EMAILS);
   }
+  cfg.memoryEmbedding = { ...cfg.memoryEmbedding };
+  if (process.env.DASHSCOPE_API_KEY !== undefined) cfg.memoryEmbedding.key = process.env.DASHSCOPE_API_KEY;
+  if (process.env.OMB_MEMORY_EMBEDDING_URL !== undefined) cfg.memoryEmbedding.url = process.env.OMB_MEMORY_EMBEDDING_URL;
+  if (process.env.OMB_MEMORY_EMBEDDING_MODEL !== undefined) cfg.memoryEmbedding.model = process.env.OMB_MEMORY_EMBEDDING_MODEL;
   return cfg;
 }
 

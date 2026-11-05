@@ -1,5 +1,6 @@
 // Recall rides in front of the turn's message, never the system prompt; fence markers are neutralised so a note cannot close the block.
-import { recallMessages, recallTerms, type MemoryHit, type RecallHit } from "./message-db.ts";
+import { memoryBigrams, memorySnippet, recallMessages, recallTerms, searchMemoryBigram, type MemoryHit, type RecallHit } from "./message-db.ts";
+import { mergeRanked, semanticMemoryHits, type MemoryEmbeddingSettings } from "./memory-embeddings.ts";
 import { parseTopicHeader, readTopicHead, topicBody, topicWords } from "./memory-topics.ts";
 import { listMemoryTopics, memoryDate, readMemoryTopic, searchMemoryFiles, workspaceDir } from "./workspace.ts";
 import { withoutExpired, withoutSuperseded } from "./memory-entries.ts";
@@ -111,6 +112,8 @@ export interface RecallInput {
   threadIds: readonly string[];
   label: (threadId: string) => string;
   author: (hit: RecallHit) => string;
+  /** Null or absent keeps recall local: FTS plus bigrams, no network. */
+  embedding?: MemoryEmbeddingSettings | null;
 }
 
 const TOPIC_PASSAGE_CHARS = 600;
@@ -134,7 +137,9 @@ export function topicPassages(botId: string, query: string): RecallPassage[] {
       if (!terms.some((term) => words.some((word) => sameWord(term, word)))) continue;
       const body = topicBody(withoutSuperseded(withoutExpired(readMemoryTopic(botId, topic.name) ?? "", memoryDate()).text));
       if (!body) continue;
-      out.push({ source: "memory", label: `memory/${topic.name}`, snippet: body.length > TOPIC_PASSAGE_CHARS ? `${body.slice(0, TOPIC_PASSAGE_CHARS)}…` : body });
+      // Show the line that answers the question, not the introduction: a long topic buries the fact otherwise.
+      const snippet = memorySnippet(body, new Set(memoryBigrams(query)));
+      out.push({ source: "memory", label: `memory/${topic.name}`, snippet: snippet.length > TOPIC_PASSAGE_CHARS ? `${snippet.slice(0, TOPIC_PASSAGE_CHARS)}…` : snippet });
       if (out.length >= MEMORY_HITS) break;
     }
   } catch {
@@ -143,16 +148,42 @@ export function topicPassages(botId: string, query: string): RecallPassage[] {
   return out;
 }
 
-export function memoryPassages(botId: string, query: string): RecallPassage[] {
-  let hits: MemoryHit[] = [];
+/** Local recall: FTS hits merged with the bigram ranker, which is what makes Chinese queries work at all. */
+function localMemoryHits(botId: string, query: string): MemoryHit[] {
+  let fts: MemoryHit[] = [];
   try {
-    hits = searchMemoryFiles(botId, query, MEMORY_HITS * 3, "any");
+    fts = searchMemoryFiles(botId, query, MEMORY_HITS * 3, "any").filter((hit) => recalled(hit.file) && enoughMatches(query, hit.snippet));
   } catch {
-    return [];
+    fts = [];
   }
-  return hits
-    .filter((hit) => recalled(hit.file) && enoughMatches(query, hit.snippet))
-    .map((hit) => ({ source: "memory" as const, label: hit.file, at: hit.at, snippet: plain(hit.snippet) }));
+  let local: MemoryHit[] = [];
+  try {
+    local = searchMemoryBigram(botId, query, MEMORY_HITS * 3);
+  } catch {
+    local = [];
+  }
+  return mergeRanked([fts, local]).filter((hit) => recalled(hit.file));
+}
+
+const asPassages = (hits: readonly MemoryHit[]): RecallPassage[] =>
+  hits.slice(0, MEMORY_HITS).map((hit) => ({ source: "memory" as const, label: hit.file, at: hit.at, snippet: plain(hit.snippet) }));
+
+export function memoryPassages(botId: string, query: string): RecallPassage[] {
+  return asPassages(localMemoryHits(botId, query));
+}
+
+/** Adds the optional semantic pass; any failure falls back to the local result instead of losing memory. */
+async function memoryPassagesWithEmbedding(botId: string, query: string, embedding?: MemoryEmbeddingSettings | null): Promise<RecallPassage[]> {
+  const local = localMemoryHits(botId, query);
+  if (!embedding) return asPassages(local);
+  let semantic: MemoryHit[] = [];
+  try {
+    semantic = (await semanticMemoryHits(botId, query, embedding, MEMORY_HITS * 3)).filter((hit) => recalled(hit.file));
+  } catch {
+    semantic = [];
+  }
+  if (!semantic.length) return asPassages(local);
+  return asPassages(mergeRanked([semantic, local]));
 }
 
 export function conversationPassages(input: RecallInput, query: string): RecallPassage[] {
@@ -174,12 +205,13 @@ export function conversationPassages(input: RecallInput, query: string): RecallP
     }));
 }
 
-export function buildRecall(input: RecallInput): RecallResult | null {
+export async function buildRecall(input: RecallInput): Promise<RecallResult | null> {
   const query = recallQuery(input.message);
   if (!query) return null;
   const memoryIds = input.memoryIds?.length ? input.memoryIds : [input.botId];
   const topics = memoryIds.flatMap((id) => topicPassages(id, query));
-  const notes = selectMemoryPassages(memoryIds.flatMap((id) => memoryPassages(id, query)), topics);
+  const passages = (await Promise.all(memoryIds.map((id) => memoryPassagesWithEmbedding(id, query, input.embedding)))).flat();
+  const notes = selectMemoryPassages(passages, topics);
   return renderRecall([...notes, ...conversationPassages(input, query)]);
 }
 

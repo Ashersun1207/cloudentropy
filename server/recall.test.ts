@@ -8,16 +8,16 @@ import { appendMemoryLog, searchMemoryFiles, writeMemoryFile, writeMemoryTopic, 
 
 const BOT = "bot-recall-test";
 
-it("keeps a matching answer late in a named topic instead of replacing it with the introduction", () => {
+it("keeps a matching answer late in a named topic instead of replacing it with the introduction", async () => {
   writeMemoryTopic(BOT, "tapa.md", `---\ntitle: Tapa\n---\n${"Earlier draft background. ".repeat(40)}\nThe approved amber test is version SEVEN.\n`);
-  const result = buildRecall({ botId: BOT, message: "Tapa approved amber test", threadIds: [], label: () => "", author: () => "" });
+  const result = await buildRecall({ botId: BOT, message: "Tapa approved amber test", threadIds: [], label: () => "", author: () => "" });
   expect(result?.text).toContain("SEVEN");
 });
 
-it("keeps a named topic's matching answer when better-ranked matches fill the recall budget", () => {
+it("keeps a named topic's matching answer when better-ranked matches fill the recall budget", async () => {
   writeMemoryTopic(BOT, "tapa.md", `---\ntitle: Tapa\n---\n${"Earlier draft background. ".repeat(40)}\nThe approved amber test is version SEVEN.\n`);
   for (let n = 0; n < 5; n++) writeMemoryTopic(BOT, `decoy-${n}.md`, `- Tapa approved amber test, Tapa amber test ${n}\n`);
-  const result = buildRecall({ botId: BOT, message: "Tapa approved amber test", threadIds: [], label: () => "", author: () => "" });
+  const result = await buildRecall({ botId: BOT, message: "Tapa approved amber test", threadIds: [], label: () => "", author: () => "" });
   expect(result?.text).toContain("SEVEN");
 });
 
@@ -76,13 +76,13 @@ describe("recall from memory files", () => {
     rmSync(WORKSPACES_DIR, { recursive: true, force: true });
   });
 
-  it("finds a topic by one word or an alias, never MEMORY.md or the archive", () => {
+  it("finds a topic by one word or an alias, never MEMORY.md or the archive", async () => {
     writeMemoryFile(BOT, "- 2026-09-10 · The dentist is Dr Rao\n");
     writeMemoryTopic(BOT, "dining.md", "---\naliases: [food, restaurants]\n---\n- Loves pasta, hates olives\n");
     writeMemoryTopic(BOT, "archive.md", "- 2026-09-01 · Dentist was Dr Old · expired 2026-09-05\n");
     expect(memoryPassages(BOT, "any good restaurants nearby tonight").map((p) => p.label)).toEqual(["memory/dining.md"]);
     expect(memoryPassages(BOT, "who is my dentist")).toEqual([]);
-    const block = buildRecall({ botId: BOT, message: "book a table, any restaurants?", threadIds: [], label: () => "", author: () => "" });
+    const block = await buildRecall({ botId: BOT, message: "book a table, any restaurants?", threadIds: [], label: () => "", author: () => "" });
     expect(block?.text).toContain("memory/dining.md");
     expect(block?.text).toContain("Loves pasta");
   });
@@ -156,10 +156,10 @@ describe("recall from memory files", () => {
     }
   });
 
-  it("is null for a short message or nothing matching", () => {
+  it("is null for a short message or nothing matching", async () => {
     writeMemoryTopic(BOT, "dining.md", "- Loves pasta\n");
-    expect(buildRecall({ botId: BOT, message: "ok", threadIds: [], label: () => "", author: () => "" })).toBeNull();
-    expect(buildRecall({ botId: BOT, message: "schedule the quarterly review", threadIds: [], label: () => "", author: () => "" })).toBeNull();
+    expect(await buildRecall({ botId: BOT, message: "ok", threadIds: [], label: () => "", author: () => "" })).toBeNull();
+    expect(await buildRecall({ botId: BOT, message: "schedule the quarterly review", threadIds: [], label: () => "", author: () => "" })).toBeNull();
   });
 });
 
@@ -170,21 +170,21 @@ describe("recall across memory layers (a Team Cloud)", () => {
     rmSync(WORKSPACES_DIR, { recursive: true, force: true });
   });
 
-  it("reads the layers it is given and no other: the turn's own and the team's, never another member's", () => {
+  it("reads the layers it is given and no other: the turn's own and the team's, never another member's", async () => {
     const TEAM = BOT, MINE = `${BOT}--member-p_mine`, THEIRS = `${BOT}--member-p_theirs`;
     writeMemoryTopic(TEAM, "office.md", "---\naliases: [plant]\n---\n- The office plant is Fernando\n");
     writeMemoryTopic(MINE, "tea.md", "---\naliases: [drinks]\n---\n- Ada prefers oolong tea\n");
     writeMemoryTopic(THEIRS, "badge.md", "---\naliases: [door]\n---\n- Ben's badge code is 4471\n");
-    const recall = (memoryIds: string[], message: string) => buildRecall({ botId: BOT, memoryIds, message, threadIds: [], label: () => "", author: () => "" })?.text ?? "";
-    const mine = recall([MINE, TEAM], "any plant or drinks or door codes for the badge?");
+    const recall = async (memoryIds: string[], message: string) => (await buildRecall({ botId: BOT, memoryIds, message, threadIds: [], label: () => "", author: () => "" }))?.text ?? "";
+    const mine = await recall([MINE, TEAM], "any plant or drinks or door codes for the badge?");
     expect(mine).toContain("Fernando");
     expect(mine).toContain("oolong");
     expect(mine).not.toContain("4471");
-    const team = recall([TEAM], "any plant or drinks or door codes for the badge?");
+    const team = await recall([TEAM], "any plant or drinks or door codes for the badge?");
     expect(team).toContain("Fernando");
     expect(team).not.toContain("oolong");
     // Without memoryIds a bot reads its own folder only, as before.
-    expect(recall([], "any plant or drinks?")).toContain("Fernando");
-    expect(recall([], "any plant or drinks?")).not.toContain("oolong");
+    expect(await recall([], "any plant or drinks?")).toContain("Fernando");
+    expect(await recall([], "any plant or drinks?")).not.toContain("oolong");
   });
 });
