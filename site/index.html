@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Entropybot 是面向 macOS 的 AI 机器人应用。无需账号即可开始，下载桌面版，按你的选择连接模型。查看真实界面、最新版本与开源代码。" />
+<meta name="color-scheme" content="light dark" />
+<title>Entropybot — 你自己的 AI 机器人团队</title>
+<link rel="icon" href="./assets/app-icon.png" type="image/png" />
+<script>
+  // Apply the saved preference before the first paint; storage may be unavailable.
+  (() => {
+    let preference = 'system';
+    try {
+      const saved = localStorage.getItem('entropybot-theme');
+      if (['light', 'dark', 'system'].includes(saved)) preference = saved;
+    } catch (_) {}
+    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.dataset.theme = preference === 'system' ? (dark ? 'dark' : 'light') : preference;
+    document.documentElement.dataset.preference = preference;
+  })();
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --app:#fafafa; --panel:#fff; --raised:#ededed; --hover:#e4e4e4;
+    --edge:#dfdfdf; --ink:#202020; --muted:#616161; --accent:#0969c6;
+    --primary:#0969c6; --header:rgba(250,250,250,.92);
+    --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",system-ui,sans-serif;
+  }
+  :root[data-theme="dark"] {
+    color-scheme:dark;
+    --app:#121212; --panel:#171717; --raised:#242424; --hover:#303030;
+    --edge:#363636; --ink:#f5f5f5; --muted:#adadad; --accent:#7fc0ff;
+    --primary:#0969c6; --header:rgba(18,18,18,.92);
+  }
+  @media (prefers-color-scheme:dark) {
+    :root:not([data-theme]) {
+      color-scheme:dark;
+      --app:#121212; --panel:#171717; --raised:#242424; --hover:#303030;
+      --edge:#363636; --ink:#f5f5f5; --muted:#adadad; --accent:#7fc0ff;
+      --primary:#0969c6; --header:rgba(18,18,18,.92);
+    }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--app); color:var(--ink); font-family:var(--font); line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-underline-offset:4px; }
+  button { font:inherit; cursor:pointer; }
+  a, button { -webkit-tap-highlight-color:transparent; }
+  :focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+  [hidden] { display:none !important; }
+  .wrap { width:min(1120px,100%); margin-inline:auto; padding-inline:28px; }
+  .skip { position:fixed; top:8px; left:16px; z-index:50; padding:8px 14px; background:var(--panel); transform:translateY(-160%); }
+  .skip:focus { transform:translateY(0); }
+  header { border-bottom:1px solid var(--edge); background:var(--header); }
+  .nav { min-height:72px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+  .brand { display:inline-flex; align-items:center; gap:10px; font-size:16px; font-weight:600; text-decoration:none; }
+  .brand img { width:30px; height:30px; border-radius:7px; }
+  .nav-links { display:flex; align-items:center; gap:20px; }
+  .nav-links > a { color:var(--muted); font-size:13px; text-decoration:none; }
+  .nav-links > a:hover, footer a:hover { color:var(--ink); text-decoration:underline; }
+  .theme { display:flex; gap:2px; padding:3px; border:1px solid var(--edge); border-radius:9px; }
+  .theme button { border:0; border-radius:5px; padding:5px 9px; color:var(--muted); background:transparent; font-size:12px; min-height:32px; }
+  .theme button:hover { background:var(--hover); color:var(--ink); }
+  .theme button[aria-pressed="true"] { background:var(--raised); color:var(--ink); }
+  .hero { padding:72px 0 32px; text-align:center; }
+  .eyebrow { margin:0 0 18px; color:var(--muted); font-size:13px; letter-spacing:.04em; }
+  h1 { margin:0 auto 22px; max-width:800px; font-size:clamp(34px,5vw,56px); line-height:1.2; letter-spacing:-.035em; font-weight:650; }
+  .lede { max-width:570px; margin:0 auto; color:var(--muted); font-size:16px; }
+  .hero-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:28px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:9px 18px; border-radius:9px; border:1px solid var(--edge); background:var(--panel); font-size:14px; font-weight:550; text-decoration:none; transition:background .15s; }
+  .btn:hover { background:var(--raised); }
+  .btn.primary { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .btn.primary:hover { background:#0759aa; }
+  .fine { margin:14px 0 0; color:var(--muted); font-size:12px; }
+  .stage { margin:16px 0 0; }
+  .screenshot-link { display:block; border:1px solid var(--edge); border-radius:12px; background:var(--panel); overflow:hidden; box-shadow:0 16px 56px -32px rgba(0,0,0,.35); }
+  .screenshot { display:block; width:100%; height:auto; aspect-ratio:16/10; object-fit:contain; }
+  .shot-dark { display:none; }
+  :root[data-theme="dark"] .shot-light { display:none; }
+  :root[data-theme="dark"] .shot-dark { display:block; }
+  @media (prefers-color-scheme:dark) {
+    :root:not([data-theme]) .shot-light { display:none; }
+    :root:not([data-theme]) .shot-dark { display:block; }
+  }
+  figcaption { margin-top:12px; text-align:center; color:var(--muted); font-size:12px; }
+  .section { padding-top:64px; }
+  h2 { margin:0 0 22px; font-size:24px; font-weight:600; letter-spacing:-.02em; }
+  .notes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; }
+  .notes article { border-top:1px solid var(--edge); padding-top:18px; }
+  h3 { margin:0 0 8px; font-size:15px; font-weight:600; }
+  .notes p { margin:0; color:var(--muted); font-size:14px; }
+  .download { margin-top:56px; padding:28px; display:flex; align-items:center; justify-content:space-between; gap:24px; border:1px solid var(--edge); border-radius:12px; background:var(--panel); }
+  .download h2 { font-size:20px; margin-bottom:6px; }
+  .download p { margin:0; font-size:13px; color:var(--muted); }
+  .download .btn { flex-shrink:0; }
+  footer { margin-top:64px; border-top:1px solid var(--edge); padding:26px 0 36px; color:var(--muted); font-size:12px; }
+  footer p { margin:0 0 10px; }
+  footer nav { display:flex; flex-wrap:wrap; gap:18px; }
+  dialog { width:min(1500px,96vw); max-width:96vw; max-height:94dvh; padding:16px; color:var(--ink); background:var(--panel); border:1px solid var(--edge); border-radius:12px; }
+  dialog::backdrop { background:rgba(0,0,0,.75); }
+  .dialog-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
+  .dialog-head h2 { font-size:15px; margin:0; }
+  .dialog-head button { min-height:44px; padding:8px 14px; border:1px solid var(--edge); border-radius:8px; background:var(--raised); color:var(--ink); }
+  .zoom-image { display:block; width:100%; height:auto; }
+  .full-image { display:inline-block; margin-top:12px; font-size:13px; color:var(--muted); }
+  @media (max-width:760px) {
+    .wrap { padding-inline:20px; }
+    .nav { padding-block:14px; flex-wrap:wrap; gap:12px; }
+    .nav-links { width:100%; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .hero { padding-top:48px; }
+    .lede { font-size:15px; }
+    .notes { grid-template-columns:1fr; gap:24px; }
+    .section { padding-top:44px; }
+    .download { margin-top:36px; padding:22px; align-items:flex-start; flex-direction:column; }
+    .stage { margin-inline:-8px; }
+    .screenshot-link { border-radius:8px; }
+    footer { margin-top:44px; }
+  }
+  @media (prefers-reduced-motion:reduce) { *, *::before, *::after { transition:none !important; animation:none !important; scroll-behavior:auto !important; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到主要内容</a>
+<header>
+  <nav class="wrap nav" aria-label="主导航">
+    <a class="brand" href="./" aria-label="Entropybot 首页"><img src="./assets/app-icon.png" width="30" height="30" alt="" />Entropybot</a>
+    <div class="nav-links">
+      <a href="https://github.com/Ashersun1207/entropybot">源码</a>
+      <a href="https://github.com/Ashersun1207/entropybot/releases">版本记录</a>
+      <div class="theme" role="group" aria-label="页面主题" hidden>
+        <button type="button" data-theme-choice="light" aria-pressed="false">浅色</button>
+        <button type="button" data-theme-choice="dark" aria-pressed="false">深色</button>
+        <button type="button" data-theme-choice="system" aria-pressed="true">跟随系统</button>
+      </div>
+    </div>
+  </nav>
+</header>
+<main id="main" class="wrap" tabindex="-1">
+  <section class="hero" aria-labelledby="hero-title">
+    <p class="eyebrow">Entropybot · macOS</p>
+    <h1 id="hero-title">把任务交给你的<br />机器人团队</h1>
+    <p class="lede">在桌面上与你的 AI 机器人协作。<br />从一次对话开始，按你的选择连接模型。</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="https://github.com/Ashersun1207/entropybot/releases/latest">下载 macOS 版</a>
+      <a class="btn" href="/auth/google/start?rd=/welcome">使用 Google 登录</a>
+    </div>
+    <p class="fine">macOS Apple silicon · 无需账号即可开始</p>
+  </section>
+  <figure class="stage">
+    <a class="screenshot-link shot-light" href="./assets/app-light.webp" aria-label="查看浅色应用界面大图" data-screenshot>
+      <img class="screenshot" src="./assets/app-light.webp" width="2560" height="1600" alt="Entropybot 桌面应用的浅色主题真实界面" fetchpriority="high" />
+    </a>
+    <a class="screenshot-link shot-dark" href="./assets/app-dark.webp" aria-label="查看深色应用界面大图" data-screenshot>
+      <img class="screenshot" src="./assets/app-dark.webp" width="2560" height="1600" alt="Entropybot 桌面应用的深色主题真实界面" fetchpriority="high" />
+    </a>
+    <figcaption>应用真实界面 · 对话内容为演示示例 · 切换主题，或点击查看大图</figcaption>
+  </figure>
+  <section class="section" aria-labelledby="start-title">
+    <h2 id="start-title">从你的桌面开始</h2>
+    <div class="notes">
+      <article><h3>下载即可开始</h3><p>下载 macOS 桌面版，无需创建账号即可开始使用。</p></article>
+      <article><h3>按选择连接模型</h3><p>使用远程模型时，相关请求会发送至你选择的模型服务，由该服务处理。</p></article>
+      <article><h3>开放的源码</h3><p>在仓库中查看项目源码、版本记录与许可说明，了解应用的更新。</p></article>
+    </div>
+  </section>
+  <section class="download" aria-labelledby="download-title">
+    <div><h2 id="download-title">让协作从这里开始</h2><p>前往最新版本页面，查看 macOS 安装包与发布说明。</p></div>
+    <a class="btn primary" href="https://github.com/Ashersun1207/entropybot/releases/latest">下载 macOS 版</a>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <p>Entropybot 是 OpenMausBot 的独立开发分支，遵循 Apache-2.0；上游归属与 NOTICE 保留在仓库中。</p>
+    <nav aria-label="项目链接">
+      <a href="https://github.com/Ashersun1207/entropybot">源码</a>
+      <a href="https://github.com/Ashersun1207/entropybot/releases">版本记录</a>
+      <a href="https://github.com/Ashersun1207/entropybot/blob/main/LICENSE">Apache-2.0 许可</a>
+      <a href="https://github.com/Ashersun1207/entropybot/blob/main/NOTICE">归属声明</a>
+    </nav>
+  </div>
+</footer>
+<dialog aria-labelledby="preview-title" id="preview">
+  <div class="dialog-head"><h2 id="preview-title">应用界面</h2><button type="button" id="close-preview" autofocus>关闭</button></div>
+  <img class="zoom-image" id="preview-image" alt="" />
+  <a class="full-image" id="full-image" href="./assets/app-light.webp">打开原始图片</a>
+</dialog>
+<script>
+  (() => {
+    const root = document.documentElement;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const buttons = document.querySelectorAll('[data-theme-choice]');
+    let preference = root.dataset.preference || 'system';
+    function applyTheme() {
+      root.dataset.theme = preference === 'system' ? (media.matches ? 'dark' : 'light') : preference;
+      root.dataset.preference = preference;
+      buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === preference)));
+    }
+    buttons.forEach(button => button.addEventListener('click', () => {
+      preference = button.dataset.themeChoice;
+      try { localStorage.setItem('entropybot-theme', preference); } catch (_) {}
+      applyTheme();
+    }));
+    if (media.addEventListener) media.addEventListener('change', applyTheme);
+    else if (media.addListener) media.addListener(applyTheme);
+    window.addEventListener('storage', event => {
+      if (event.key !== 'entropybot-theme' && event.key !== null) return;
+      preference = ['light', 'dark', 'system'].includes(event.newValue) ? event.newValue : 'system';
+      applyTheme();
+    });
+    applyTheme();
+    document.querySelector('.theme').hidden = false;
+
+    const preview = document.getElementById('preview');
+    const image = document.getElementById('preview-image');
+    const fullImage = document.getElementById('full-image');
+    let opener;
+    if (typeof preview.showModal === 'function') {
+      document.querySelectorAll('[data-screenshot]').forEach(link => link.addEventListener('click', event => {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        image.src = link.href;
+        image.alt = link.querySelector('img').alt;
+        fullImage.href = link.href;
+        opener = link;
+        preview.showModal();
+        event.preventDefault();
+      }));
+      document.getElementById('close-preview').addEventListener('click', () => preview.close());
+      preview.addEventListener('close', () => { if (opener) opener.focus(); });
+    }
+  })();
+</script>
+</body>
+</html>
