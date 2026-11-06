@@ -453,6 +453,9 @@ export interface LinuxLocalControlStatus {
 }
 
 export interface UpdaterState {
+  /** Manual distributions never download or replace the application in the background. */
+  mode?: "manual";
+  releasesUrl?: string;
   status:
     | "idle"
     | "checking"

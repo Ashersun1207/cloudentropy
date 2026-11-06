@@ -27,6 +27,16 @@ export function UpdatesRow({ title = t("settings.updates.title") }: { title?: st
   const s = useUpdaterState();
   const updater = window.ogb?.updater;
   if (!s || !updater) return null;
+  if (s.mode === "manual") {
+    const chinese = activeLocale().startsWith("zh");
+    return (
+      <SettingRow title={title} subtitle={chinese ? "cloudentropy 独立更新：下载安装包后替换应用，聊天与记忆保留。" : "cloudentropy updates: download and replace the app. Chats and memory are preserved."}>
+        <button className="ui-button" onClick={() => void updater.check()}>
+          {chinese ? "打开发布页面" : "Open Releases"}
+        </button>
+      </SettingRow>
+    );
+  }
   const label =
     s.status === "checking"
       ? t("settings.updates.checking")

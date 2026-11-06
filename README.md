@@ -13,7 +13,7 @@ These are development changes. Synthetic retrieval measurements and targeted tes
 
 ## Development
 
-Requires Node 24+ and pnpm 10.33.0. Run `pnpm install --frozen-lockfile`, then `pnpm dev:server` and `pnpm dev` in separate terminals. Provider credentials are configured locally, outside this repository. The current desktop build still retains upstream bundle identifiers and update configuration; it is intended for local development and should not be distributed as an official release.
+Requires Node 24+ and pnpm 10.33.0. Run `pnpm install --frozen-lockfile`, then `pnpm dev:server` and `pnpm dev` in separate terminals. Provider credentials are configured locally, outside this repository. Cloudentropy uses bundle ID `ai.cloudentropy.desktop`, independent versions starting at `0.2.0`, and manual updates from [our Releases](https://github.com/Ashersun1207/cloudentropy/releases). It never installs upstream releases. Existing workspace and desktop profile directories are preserved. See [update and release instructions](docs/CLOUDENTROPY_UPDATES.md). Current macOS builds are ad-hoc signed and are not Apple notarized.
 
 ## Attribution and license
 

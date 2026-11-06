@@ -2,7 +2,7 @@
 import { existsSync } from "node:fs";
 import { join, sep } from "node:path";
 
-export const LATEST_RELEASE_URL = "https://api.github.com/repos/milind-soni/OpenMausBot/releases/latest";
+export const LATEST_RELEASE_URL = "https://api.github.com/repos/Ashersun1207/cloudentropy/releases/latest";
 const CACHE_MS = 60 * 60_000;
 
 /** "managed" is a hosted or Cloud server that is updated for its owner. */
@@ -12,7 +12,7 @@ export type InstallKind = "desktop" | "managed" | "docker" | "podman" | "npm" | 
 export const UPDATE_COMMANDS: Partial<Record<InstallKind, { command: string; restart: boolean }>> = {
   docker: { command: "docker compose pull omb && docker compose up -d", restart: false },
   podman: { command: "git pull && cd deploy/podman && PODMAN_COMPOSE_PROVIDER=podman-compose podman compose --env-file .env -f compose.yaml up -d --build", restart: false },
-  npm: { command: "npm install -g openmausbot@latest", restart: true },
+  npm: { command: 'echo "Install Cloudentropy from https://github.com/Ashersun1207/cloudentropy/releases"', restart: true },
   git: { command: "git pull && pnpm install", restart: true },
 };
 
@@ -93,13 +93,13 @@ export function createUpdateChecker(options: {
     inflight ??= (async () => {
       try {
         const response = await fetchRelease(LATEST_RELEASE_URL, {
-          headers: { accept: "application/vnd.github+json", "user-agent": "openmausbot-update-check" },
+          headers: { accept: "application/vnd.github+json", "user-agent": "cloudentropy-update-check" },
           signal: AbortSignal.timeout(8_000),
         });
         if (!response.ok) throw new Error(`GitHub answered ${response.status}`);
         const release = await response.json() as { tag_name?: unknown; html_url?: unknown };
         if (typeof release.tag_name !== "string") throw new Error("GitHub sent no release tag");
-        const latest = release.tag_name.replace(/^v/, "");
+        const latest = release.tag_name.replace(/^(?:cloudentropy-)?v/, "");
         const result: UpdateCheck = {
           ...base(),
           latest,
