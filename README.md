@@ -1,3 +1,26 @@
+# cloudentropy
+
+An independent development derivative of [OpenMausBot](https://github.com/milind-soni/OpenMausBot), maintained by Ashersun1207 for single-user assistants. This repository is not an official OpenMausBot release and is not affiliated with its maintainers.
+
+## Local changes
+
+- Optional DashScope `text-embedding-v4` memory retrieval with a local Chinese bigram fallback.
+- Persistent vector cache keyed by bot, file and model; integration with existing recall limits.
+- Model-aware conversation replay budgets and history-based compaction for transcript-replay engines.
+- Compatibility handling for context-length errors, content-part arrays and reused tool-call IDs.
+
+These are development changes. Synthetic retrieval measurements and targeted tests are not guarantees of recall accuracy, crash recovery or production readiness. API credentials, conversations and personal memory are not included.
+
+## Development
+
+Requires Node 24+ and pnpm 10.33.0. Run `pnpm install --frozen-lockfile`, then `pnpm dev:server` and `pnpm dev` in separate terminals. Provider credentials are configured locally, outside this repository. The current desktop build still retains upstream bundle identifiers and update configuration; it is intended for local development and should not be distributed as an official release.
+
+## Attribution and license
+
+The upstream README is preserved below. Core code retains Apache-2.0 and its original [NOTICE](NOTICE). The `enterprise/` directory retains its separate [license](enterprise/LICENSE); it is not Apache-2.0. Upstream names and artwork remain their owners' trademarks. No trademark rights or enterprise production license are granted by this derivative.
+
+---
+
 <div align="center">
 
 # OpenMausBot
