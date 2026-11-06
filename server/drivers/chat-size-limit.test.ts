@@ -219,3 +219,11 @@ describe("an OpenAI-compatible provider that refuses large requests", () => {
     expect(f.errors()).toEqual([message]);
   });
 });
+
+
+describe("OpenAI-style context errors", () => {
+  it("treats a 400 context_length_exceeded as too large", () => {
+    expect(refusesRequestSize(400, '{"error":{"code":"context_length_exceeded"}}')).toBe(true);
+    expect(refusesRequestSize(400, "This model's maximum context length is 8192 tokens")).toBe(true);
+  });
+});

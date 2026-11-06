@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  adaptiveReplayBytes,
+  adaptiveReplayMessages,
   boundedContextText,
   replayToolCalls,
   selectReplay,
@@ -581,5 +583,20 @@ describe("a voice note in a rebuilt session", () => {
       ["b1", "All green.\n\nDeploy is green, every check passed."],
       ["b2", "Voice only."],
     ]);
+  });
+});
+
+
+describe("adaptive replay budget", () => {
+  it("keeps the old 24 KB floor for small and unknown windows", () => {
+    expect(adaptiveReplayBytes(8_000)).toBe(24_000);
+    expect(adaptiveReplayBytes(undefined)).toBe(24_000);
+  });
+
+  it("follows the window up to the cap", () => {
+    expect(adaptiveReplayBytes(128_000)).toBe(76_800);
+    expect(adaptiveReplayBytes(1_048_576)).toBe(180_000);
+    expect(adaptiveReplayMessages(180_000)).toBe(225);
+    expect(adaptiveReplayMessages(24_000)).toBe(40);
   });
 });

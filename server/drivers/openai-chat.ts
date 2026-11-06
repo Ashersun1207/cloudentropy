@@ -130,6 +130,17 @@ const usageFrom = (usage: CompletionJson["usage"]): Usage | null =>
 
 const completionUsage = (json: CompletionJson) => json.usage ?? json.x_groq?.usage;
 
+/** Providers may answer with a string or with content parts; anything else is empty, never a silent crash. */
+function contentTextOf(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.map((part) => {
+    if (typeof part === "string") return part;
+    if (object(part) && typeof part.text === "string") return part.text;
+    return "";
+  }).join("");
+}
+
 const asError = (value: unknown): Error =>
   value instanceof Error ? value : new Error(String(value));
 
@@ -351,7 +362,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
         const finishReason = json.choices?.[0]?.finish_reason ?? null;
         activeSignal.throwIfAborted();
         return {
-          text: options.contentText ? options.contentText(message?.content) : typeof message?.content === "string" ? message.content : "",
+          text: options.contentText ? options.contentText(message?.content) : contentTextOf(message?.content),
           reasoning: options.reasoning && typeof reasoning === "string"
             ? reasoning
             : "",
@@ -404,7 +415,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
         const reasoningDelta = options.reasoning && typeof reasoningPart === "string"
           ? reasoningPart
           : "";
-        const contentDelta = options.contentText ? options.contentText(delta?.content) : typeof delta?.content === "string" ? delta.content : "";
+        const contentDelta = options.contentText ? options.contentText(delta?.content) : contentTextOf(delta?.content);
         if (reasoningDelta) {
           reasoning += reasoningDelta;
           onDelta?.(reasoningDelta, "reasoning_text");
@@ -432,6 +443,39 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
               try { body = JSON.parse(buffer) as CompletionJson; } catch { body = undefined; }
               const bodyError = body ? completionError(body, "completion error") : null;
               if (bodyError) throw bodyError;
+              // A gateway that ignores stream:true and answers with one JSON object, often under the wrong
+              // content type: read it as the whole completion instead of losing the answer.
+              const plain = body;
+              const message = plain?.choices?.[0]?.message;
+              if (plain && message && object(message)) {
+                const calls = new ChatToolCalls();
+                calls.add(message.tool_calls, false);
+                calls.addLegacy(message.function_call);
+                const details = new ChatReasoningDetails();
+                details.add(message.reasoning_details);
+                const reasoning = message.reasoning_content ?? message.reasoning;
+                const tokenUsage = completionUsage(plain);
+                if (onUsage) {
+                  activeSignal.throwIfAborted();
+                  const count = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+                  onUsage({
+                    model: typeof plain.model === "string" && plain.model.trim() ? plain.model : model,
+                    input: count(tokenUsage?.prompt_tokens),
+                    output: count(tokenUsage?.completion_tokens),
+                    cachedInput: count(tokenUsage?.prompt_tokens_details?.cached_tokens),
+                    costUsd: count(tokenUsage?.cost),
+                  });
+                }
+                return {
+                  text: options.contentText ? options.contentText(message.content) : contentTextOf(message.content),
+                  reasoning: options.reasoning && typeof reasoning === "string" ? reasoning : "",
+                  usage: usageFrom(tokenUsage),
+                  toolCalls: calls.finish(plain.choices?.[0]?.finish_reason ?? null, false),
+                  finishReason: plain.choices?.[0]?.finish_reason ?? null,
+                  protocolReasoning: typeof reasoning === "string" ? reasoning : "",
+                  protocolReasoningDetails: details.blocks,
+                };
+              }
             }
             throw new ChatProtocolError("Stream ended before completion");
           }
@@ -773,9 +817,12 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
             break;
           }
           if (!tools.definitions.length) throw new ChatProtocolError("provider returned tool calls, but no tools are available for this turn");
-          // Validate IDs for the entire batch before executing any of its calls.
+          // Only a repeat inside one batch is the provider contradicting itself; some OpenAI-compatible
+          // gateways restart ids at call_0 every round, which used to abort a legitimate second batch.
+          const batchIds = new Set<string>();
           for (const call of completion.toolCalls) {
-            if (seenCalls.has(call.id)) throw new ChatProtocolError("provider reused a tool-call ID; refusing to repeat an operation");
+            if (batchIds.has(call.id)) throw new ChatProtocolError("provider repeated a tool-call ID inside one batch; refusing to repeat an operation");
+            batchIds.add(call.id);
             seenCalls.add(call.id);
           }
           if (seenCalls.size > MAX_TURN_TOOL_CALLS) throw new ChatProtocolError(stoppedAfter(`${MAX_TURN_TOOL_CALLS} tool calls`));

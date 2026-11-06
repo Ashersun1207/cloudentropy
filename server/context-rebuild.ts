@@ -155,6 +155,21 @@ export interface CompactionRecord {
 
 export const DEFAULT_REBUILD_BYTES = 24_000;
 export const MAX_SUMMARY_BYTES = 6_000;
+/** A replay budget that follows the model window: 20% of it, capped so one turn cannot cost a fortune. */
+export const REPLAY_WINDOW_FRACTION = 0.2;
+export const REPLAY_MAX_TOKENS = 60_000;
+/** Mixed Chinese/English text; deliberately conservative so the byte budget under-shoots the token budget. */
+export const REPLAY_BYTES_PER_TOKEN = 3;
+
+export function adaptiveReplayBytes(windowTokens?: number): number {
+  if (!windowTokens || !Number.isFinite(windowTokens) || windowTokens <= 0) return DEFAULT_REBUILD_BYTES;
+  const tokens = Math.min(windowTokens * REPLAY_WINDOW_FRACTION, REPLAY_MAX_TOKENS);
+  return Math.max(DEFAULT_REBUILD_BYTES, Math.round(tokens * REPLAY_BYTES_PER_TOKEN));
+}
+
+export function adaptiveReplayMessages(bytes: number): number {
+  return Math.max(40, Math.min(400, Math.round(bytes / 800)));
+}
 const OMITTED_TEXT = "\n[Text shortened for context; the original remains in this conversation.]";
 
 /** UTF-8 prefixes must not end inside a code point. */

@@ -5,7 +5,7 @@ import { object } from "./openai-chat-protocol.ts";
 
 /** nginx's "413 Request Entity Too Large" page, Express's "request entity too large", "Payload Too Large", and
  * OpenAI's "Request too large for <model>". */
-const TOO_LARGE = /\b(?:request entity|payload|request) too large\b/i;
+const TOO_LARGE = /\b(?:request entity|payload|request) too large\b|maximum context length|context_length_exceeded|context window exceeded/i;
 
 export function refusesRequestSize(status: number, body: string): boolean {
   return status === 413 || TOO_LARGE.test(body);

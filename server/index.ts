@@ -13,9 +13,10 @@ import { ToolResults, TOOL_RESULT_MAX_CHARS } from "./tool-results.ts";
 import { join } from "node:path";
 import { authorizeExternalRuntime, externalRuntimeIsActive, type ExternalRuntimeGrant } from "./external-runtime.ts";
 import { z } from "zod";
-import { selectReplay, replayToolCalls, DEFAULT_REBUILD_BYTES, MAX_SUMMARY_BYTES } from "./context-rebuild.ts";
+import { selectReplay, replayToolCalls, MAX_SUMMARY_BYTES, adaptiveReplayBytes, adaptiveReplayMessages } from "./context-rebuild.ts";
 import { draftSummary, foldPoint } from "./compaction-summary.ts";
 import { compactBudget, compactionReading, contextWindowFor, shouldCompact } from "./context-budget.ts";
+import { replaysTranscriptNatively } from "./runtime/capabilities.ts";
 import { autoCompactWindow } from "./drivers/claude.ts";
 import { RoomContextTracker, roomResetNote } from "./room-context.ts";
 import { createRoomTranscript, GROUP_CONTEXT_MESSAGES } from "./host/room-transcript.ts";
@@ -7074,7 +7075,11 @@ async function compactConversation(input: {
   });
   const history = selected.transcript.filter(entry => entry.id);
   if (!history.length) return;
-  const measurement = compactionReading(instance.adapter.capabilities, task.lastContextModel === `${instance.instanceId}:${model}` && !task.rewound ? task.usage?.context : undefined);
+  // Transcript-replay engines report the size of the prompt they already truncated, so that number never
+  // reaches the compaction threshold; their real occupancy is the folded history in bytes.
+  const measurement = replaysTranscriptNatively(instance.driverKind)
+    ? undefined
+    : compactionReading(instance.adapter.capabilities, task.lastContextModel === `${instance.instanceId}:${model}` && !task.rewound ? task.usage?.context : undefined);
   const window = contextWindowFor(model, instance.models, measurement?.window);
   const bytes = history.reduce((n, entry) => n + Buffer.byteLength(entry.text), 0);
   let floor = task.contextFloor;
@@ -7846,7 +7851,16 @@ async function beginTurn(
       const contextOrder = context.map(m => m.id);
       const replayable = context.filter(m => !skipTranscript.has(m.id));
       const record = latestCompaction(activeMessages);
-      const selection = selectReplay(context, { budgetBytes: cfg.context?.rebuildBytes ?? DEFAULT_REBUILD_BYTES, excludedIds: skipTranscript, compaction: record, tools: replayToolCalls(activeMessages, cfg.context) });
+      // Follow the model window instead of a fixed 24 KB, so a long turn on a 1M model is not silently amputated.
+      const replayBytes = cfg.context?.rebuildBytes ?? adaptiveReplayBytes(contextWindowFor(model, instance.models));
+      const selection = selectReplay(context, {
+        budgetBytes: replayBytes,
+        maxMessages: cfg.context?.rebuildBytes ? undefined : adaptiveReplayMessages(replayBytes),
+        excludedIds: skipTranscript, compaction: record, tools: replayToolCalls(activeMessages, cfg.context),
+      });
+      if (selection.dropped > 0) {
+        console.log(`[replay] thread=${threadId} bytes=${replayBytes} messages=${selection.transcript.length} dropped=${selection.dropped} shortened=${selection.shortened.length}`);
+      }
       const transcript = selection.transcript.map(({ role, text }) => ({ role, text }));
       const contextReset = selection.compacted > 0 && record?.id !== task.appliedCompactionId;
       if (contextReset) store.patchTask(bot.id, threadId, { resumeCursors: {} });
