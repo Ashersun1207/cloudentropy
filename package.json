@@ -1,19 +1,19 @@
 {
-  "name": "cloudentropy",
+  "name": "entropybot",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A local-first chat app for running a team of AI agents.",
-  "homepage": "https://github.com/Ashersun1207/cloudentropy",
+  "homepage": "https://github.com/Ashersun1207/entropybot",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ashersun1207/cloudentropy.git"
+    "url": "https://github.com/Ashersun1207/entropybot.git"
   },
   "author": {
     "name": "Milind Soni",
     "email": "46266943+milind-soni@users.noreply.github.com"
   },
   "license": "Apache-2.0",
-  "desktopName": "ai.cloudentropy.desktop.desktop",
+  "desktopName": "ai.entropybot.desktop.desktop",
   "type": "module",
   "main": "electron/main.mjs",
   "engines": {
@@ -89,7 +89,7 @@
     "control-plane:check": "pnpm --filter @openmausbot/control-plane check",
     "control-plane:test": "pnpm --filter @openmausbot/control-plane test",
     "control-plane:dry-run": "pnpm --filter @openmausbot/control-plane dry-run",
-    "package:cloudentropy:mac": "pnpm package:prepare && pnpm build:speech && pnpm build:cua && electron-builder --mac --arm64 --publish never"
+    "package:entropybot:mac": "pnpm package:prepare && pnpm build:speech && pnpm build:cua && electron-builder --mac --arm64 --publish never"
   },
   "dependencies": {
     "@1password/sdk": "0.5.0",

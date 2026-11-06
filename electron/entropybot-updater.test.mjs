@@ -23,7 +23,7 @@ it("never loads a binary updater or arms a download/install timer in manual mode
     updater.registerUpdaterIpc({ pageAllowed: () => true });
     const state = fixture.handlers.get("update:get-state")({});
     expect(state.mode).toBe("manual");
-    expect(state.releasesUrl).toBe("https://github.com/Ashersun1207/cloudentropy/releases");
+    expect(state.releasesUrl).toBe("https://github.com/Ashersun1207/entropybot/releases");
     expect(fixture.loadVendor).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(0);
     expect(updater.reopenedOutOfSight()).toBe(false);
@@ -39,5 +39,5 @@ it("only an authorized window can open the fixed release URL", async () => {
   expect(() => fixture.handlers.get("update:check")({ trusted: false })).toThrow(/only available/);
   expect(fixture.open).not.toHaveBeenCalled();
   await fixture.handlers.get("update:check")({ trusted: true });
-  expect(fixture.open).toHaveBeenCalledExactlyOnceWith("https://github.com/Ashersun1207/cloudentropy/releases");
+  expect(fixture.open).toHaveBeenCalledExactlyOnceWith("https://github.com/Ashersun1207/entropybot/releases");
 });

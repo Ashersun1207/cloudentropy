@@ -138,7 +138,7 @@ export function registerUpdaterIpc({ pageAllowed: allowed }) {
     ? shell.openExternal(RELEASES_URL)
     : updaterCoordinator?.check(true)));
   ipcMain.handle("update:install", guarded("update:install", () => {
-    if (UPDATE_MODE === "manual") throw new Error("Install cloudentropy updates from GitHub Releases.");
+    if (UPDATE_MODE === "manual") throw new Error("Install entropybot updates from GitHub Releases.");
     return updaterCoordinator?.install();
   }));
   ipcMain.handle("update:seen", guarded("update:seen", () => {

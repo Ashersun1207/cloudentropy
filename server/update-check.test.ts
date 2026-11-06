@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createUpdateChecker, installKind, isNewerVersion, LATEST_RELEASE_URL } from "./update-check.ts";
 
 const release = (tag: string) =>
-  ({ ok: true, status: 200, json: async () => ({ tag_name: tag, html_url: `https://github.com/Ashersun1207/cloudentropy/releases/tag/${tag}` }) }) as Response;
+  ({ ok: true, status: 200, json: async () => ({ tag_name: tag, html_url: `https://github.com/Ashersun1207/entropybot/releases/tag/${tag}` }) }) as Response;
 
 describe("server update check", () => {
   it("tells how this server was installed", () => {
@@ -46,25 +46,25 @@ describe("server update check", () => {
       install: "docker",
       latest: "0.1.93",
       available: true,
-      releaseUrl: "https://github.com/Ashersun1207/cloudentropy/releases/tag/v0.1.93",
+      releaseUrl: "https://github.com/Ashersun1207/entropybot/releases/tag/v0.1.93",
       command: "docker compose pull omb && docker compose up -d",
       restart: false,
     });
     expect(fetch).toHaveBeenCalledWith(LATEST_RELEASE_URL, expect.anything());
   });
 
-  it("recognizes cloudentropy version tags from its own release source", async () => {
-    const fetch = vi.fn(async () => release("cloudentropy-v0.2.1"));
+  it("recognizes entropybot version tags from its own release source", async () => {
+    const fetch = vi.fn(async () => release("entropybot-v0.2.1"));
     const check = createUpdateChecker({ current: "0.2.0", install: "git", fetch });
     expect(await check()).toMatchObject({ latest: "0.2.1", available: true });
-    expect(fetch).toHaveBeenCalledWith("https://api.github.com/repos/Ashersun1207/cloudentropy/releases/latest", expect.anything());
+    expect(fetch).toHaveBeenCalledWith("https://api.github.com/repos/Ashersun1207/entropybot/releases/latest", expect.anything());
   });
 
   it("says up to date, and asks GitHub at most once an hour", async () => {
     let now = 0;
     const fetch = vi.fn(async () => release("v0.1.92"));
     const check = createUpdateChecker({ current: "0.1.92", install: "npm", fetch, now: () => now });
-    expect(await check()).toMatchObject({ available: false, latest: "0.1.92", command: 'echo "Install Cloudentropy from https://github.com/Ashersun1207/cloudentropy/releases"', restart: true });
+    expect(await check()).toMatchObject({ available: false, latest: "0.1.92", command: 'echo "Install Entropybot from https://github.com/Ashersun1207/entropybot/releases"', restart: true });
     now = 59 * 60_000;
     await check();
     expect(fetch).toHaveBeenCalledTimes(1);

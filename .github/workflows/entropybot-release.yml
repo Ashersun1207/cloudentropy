@@ -1,20 +1,20 @@
-name: Cloudentropy macOS release
+name: Entropybot macOS release
 
 on:
   push:
-    tags: ["cloudentropy-v*"]
+    tags: ["entropybot-v*"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: cloudentropy-release
+  group: entropybot-release
   cancel-in-progress: false
 
 jobs:
   build:
-    if: github.repository == 'Ashersun1207/cloudentropy'
+    if: github.repository == 'Ashersun1207/entropybot'
     runs-on: macos-15
     timeout-minutes: 60
     permissions:
@@ -32,29 +32,31 @@ jobs:
       - name: Verify tag and release identity
         id: version
         run: |
-          node scripts/cloudentropy-release.mjs check
-          echo "tag=cloudentropy-v$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+          node scripts/entropybot-release.mjs check
+          echo "tag=entropybot-v$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
       - run: pnpm typecheck
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
       - name: Verify updater boundary and migration contracts
-        run: pnpm exec vitest run electron/cloudentropy-updater.test.mjs electron/updater.test.mjs server/local-computer.test.ts server/context-rebuild.test.ts server/drivers/chat-size-limit.test.ts server/recall.test.ts server/memory-embeddings.test.ts
+        run: pnpm exec vitest run electron/entropybot-updater.test.mjs electron/updater.test.mjs server/local-computer.test.ts server/context-rebuild.test.ts server/drivers/chat-size-limit.test.ts server/recall.test.ts server/memory-embeddings.test.ts
       - name: Build Apple silicon application
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: pnpm package:cloudentropy:mac
+        run: pnpm package:entropybot:mac
       - name: Verify bundle identity and signature
         run: |
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' release/mac-arm64/Cloudentropy.app/Contents/Info.plist)" = ai.cloudentropy.desktop
-          codesign --verify --deep --strict release/mac-arm64/Cloudentropy.app
-          test -f release/mac-arm64/Cloudentropy.app/Contents/Resources/server/server/memory-embeddings.js
-          node scripts/cloudentropy-release.mjs manifest
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' release/mac-arm64/Entropybot.app/Contents/Info.plist)" = ai.entropybot.desktop
+          codesign --verify --deep --strict release/mac-arm64/Entropybot.app
+          test -f release/mac-arm64/Entropybot.app/Contents/Resources/server/server/memory-embeddings.js
+          node scripts/entropybot-release.mjs manifest
       - uses: actions/upload-artifact@v4
         with:
-          name: cloudentropy-macos-arm64
+          name: entropybot-macos-arm64
           path: |
-            release/Cloudentropy-*.dmg
-            release/Cloudentropy-*.zip
+            release/Entropybot-*.dmg
+            release/Entropybot-*.zip
             release/SHA256SUMS
-            release/cloudentropy-build.json
+            release/entropybot-build.json
           if-no-files-found: error
       - name: Create draft release
         env:
@@ -71,6 +73,6 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true || { echo "Published releases are immutable; bump the version."; exit 1; }
           else
-            gh release create "$TAG" --target "$GITHUB_SHA" --draft --title "Cloudentropy ${TAG#cloudentropy-v}" --notes-file docs/CLOUDENTROPY_RELEASE_NOTES.md
+            gh release create "$TAG" --target "$GITHUB_SHA" --draft --title "Entropybot ${TAG#entropybot-v}" --notes-file docs/ENTROPYBOT_RELEASE_NOTES.md
           fi
-          gh release upload "$TAG" release/Cloudentropy-*.dmg release/Cloudentropy-*.zip release/SHA256SUMS release/cloudentropy-build.json --clobber
+          gh release upload "$TAG" release/Entropybot-*.dmg release/Entropybot-*.zip release/SHA256SUMS release/entropybot-build.json --clobber

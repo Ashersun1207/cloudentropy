@@ -1,6 +1,6 @@
-appId: ai.cloudentropy.desktop
-productName: Cloudentropy
-artifactName: Cloudentropy-${version}-${arch}.${ext}
+appId: ai.entropybot.desktop
+productName: Entropybot
+artifactName: Entropybot-${version}-${arch}.${ext}
 
 protocols:
   - name: OpenMausBot package install
@@ -16,7 +16,7 @@ protocols:
 publish:
   - provider: github
     owner: Ashersun1207
-    repo: cloudentropy
+    repo: entropybot
 
 directories:
   buildResources: build
@@ -148,7 +148,7 @@ dmg:
   # ${arch} is load-bearing: without it the x64 dmg silently overwrites
   # the arm64 one when both arches build (this section overrides both the
   # top-level and mac-level artifactName, so it must carry the arch itself)
-  artifactName: Cloudentropy-${version}-${arch}.dmg
+  artifactName: Entropybot-${version}-${arch}.dmg
   # x/y are icon centres in points. electron-builder 26.15.3 sizes the window
   # from build/background.png and ignores dmg.window whenever a background is set.
   iconSize: 112
@@ -199,7 +199,7 @@ nsis:
   # Versioned, like the .dmg. The README's /latest/download/ button needs a
   # STABLE filename, so ship a second copy named OpenMausBot-setup.exe on the
   # release — the same trick as OpenMausBot.dmg beside OpenMausBot-${version}.dmg.
-  artifactName: Cloudentropy-${version}-setup.${ext}
+  artifactName: Entropybot-${version}-setup.${ext}
 
 linux:
   target:

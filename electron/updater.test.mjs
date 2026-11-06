@@ -18,7 +18,7 @@ const OWN = "https://omb-c-a.fly.dev";
 
 const fixture = vi.hoisted(() => ({ autoUpdater: null, handlers: new Map() }));
 
-vi.mock("./update-policy.mjs", () => ({ UPDATE_MODE: "automatic", RELEASES_URL: "https://github.com/Ashersun1207/cloudentropy/releases" }));
+vi.mock("./update-policy.mjs", () => ({ UPDATE_MODE: "automatic", RELEASES_URL: "https://github.com/Ashersun1207/entropybot/releases" }));
 
 vi.mock("electron", () => ({
   app: { isPackaged: true, getPath: () => "/unused-updater-test-log", getVersion: () => "1.0.0", hide: vi.fn() },
