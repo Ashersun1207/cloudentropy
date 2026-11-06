@@ -2,6 +2,37 @@
 // because the packaged app ships no node_modules.
 import { app, clipboard, ipcMain, shell } from "electron";
 import { RELEASES_URL, UPDATE_MODE } from "./update-policy.mjs";
+
+const LATEST_RELEASE_URL = "https://api.github.com/repos/Ashersun1207/entropybot/releases/latest";
+let manualTimer = null;
+
+/** Numeric compare for tags like 0.2.2; anything unparseable is not an update. */
+function newerThan(latest, current) {
+  const parse = (v) => { const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(String(v || "").trim()); return m ? m.slice(1, 4).map(Number) : null; };
+  const a = parse(latest);
+  const b = parse(current);
+  if (!a || !b) return false;
+  for (let i = 0; i < 3; i += 1) if (a[i] !== b[i]) return a[i] > b[i];
+  return false;
+}
+
+/** Manual distribution: report a newer release, never download or install it. */
+async function manualCheck() {
+  setState({ status: "checking" });
+  try {
+    const response = await fetch(LATEST_RELEASE_URL, {
+      headers: { accept: "application/vnd.github+json", "user-agent": "entropybot-update-check" },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const body = await response.json();
+    const latest = String(body?.tag_name ?? "").replace(/^entropybot-/, "").replace(/^v/, "");
+    if (newerThan(latest, app.getVersion())) setState({ status: "available", version: latest, releasesUrl: RELEASES_URL });
+    else setState({ status: "idle" });
+  } catch {
+    setState({ status: "idle" });
+  }
+}
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -134,9 +165,12 @@ export function registerUpdaterIpc({ pageAllowed: allowed }) {
     return handler();
   };
   ipcMain.handle("update:get-state", guarded("update:get-state", view));
-  ipcMain.handle("update:check", guarded("update:check", () => UPDATE_MODE === "manual"
-    ? shell.openExternal(RELEASES_URL)
-    : updaterCoordinator?.check(true)));
+  ipcMain.handle("update:check", guarded("update:check", async () => {
+    if (UPDATE_MODE !== "manual") return updaterCoordinator?.check(true);
+    if (state.status === "available") return shell.openExternal(RELEASES_URL);
+    await manualCheck();
+    if (state.status === "available") return shell.openExternal(RELEASES_URL);
+  }));
   ipcMain.handle("update:install", guarded("update:install", () => {
     if (UPDATE_MODE === "manual") throw new Error("Install entropybot updates from GitHub Releases.");
     return updaterCoordinator?.install();
@@ -159,6 +193,10 @@ export function startUpdater(signals = null) {
   if (UPDATE_MODE === "manual") {
     updaterCoordinator = null;
     setState({ status: "idle" });
+    if (manualTimer) return;
+    manualTimer = setInterval(() => void manualCheck(), 60 * 60 * 1000);
+    manualTimer.unref?.();
+    setTimeout(() => void manualCheck(), 15_000).unref?.();
     return;
   }
   if (!app.isPackaged) {

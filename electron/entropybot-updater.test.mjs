@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-const fixture = vi.hoisted(() => ({ handlers: new Map(), open: vi.fn(), loadVendor: vi.fn() }));
+const fixture = vi.hoisted(() => ({ handlers: new Map(), open: vi.fn(), loadVendor: vi.fn(), tag: "entropybot-v0.2.1" }));
 vi.mock("electron", () => ({
   app: { isPackaged: true, getVersion: () => "0.2.0", getPath: () => "/unused", hide: vi.fn() },
   clipboard: {},
@@ -12,32 +12,48 @@ vi.mock("node:module", () => ({ createRequire: () => fixture.loadVendor }));
 beforeEach(() => {
   vi.resetModules();
   fixture.handlers.clear();
+  fixture.tag = "entropybot-v0.2.1";
   vi.clearAllMocks();
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ tag_name: fixture.tag }) })));
 });
 
-it("never loads a binary updater or arms a download/install timer in manual mode", async () => {
+it("checks for a newer release without loading a binary updater or installing it", async () => {
   vi.useFakeTimers();
   try {
     const updater = await import("./updater.mjs");
     updater.startUpdater({ watch: () => { throw new Error("quiet install must not start"); } });
     updater.registerUpdaterIpc({ pageAllowed: () => true });
-    const state = fixture.handlers.get("update:get-state")({});
-    expect(state.mode).toBe("manual");
-    expect(state.releasesUrl).toBe("https://github.com/Ashersun1207/entropybot/releases");
+    const initial = fixture.handlers.get("update:get-state")({});
+    expect(initial.mode).toBe("manual");
+    expect(initial.releasesUrl).toBe("https://github.com/Ashersun1207/entropybot/releases");
     expect(fixture.loadVendor).not.toHaveBeenCalled();
-    expect(vi.getTimerCount()).toBe(0);
     expect(updater.reopenedOutOfSight()).toBe(false);
     expect(() => fixture.handlers.get("update:install")({})).toThrow(/GitHub Releases/);
+    await vi.advanceTimersByTimeAsync(15_000);
+    const state = fixture.handlers.get("update:get-state")({});
+    expect(state.status).toBe("available");
+    expect(state.version).toBe("0.2.1");
+    expect(fixture.loadVendor).not.toHaveBeenCalled();
+    expect(fixture.open).not.toHaveBeenCalled();
   } finally {
     vi.useRealTimers();
   }
 });
 
-it("only an authorized window can open the fixed release URL", async () => {
+it("only an authorized window can check, and opens the fixed release URL when newer", async () => {
   const updater = await import("./updater.mjs");
   updater.registerUpdaterIpc({ pageAllowed: (event) => event.trusted === true });
   expect(() => fixture.handlers.get("update:check")({ trusted: false })).toThrow(/only available/);
   expect(fixture.open).not.toHaveBeenCalled();
   await fixture.handlers.get("update:check")({ trusted: true });
   expect(fixture.open).toHaveBeenCalledExactlyOnceWith("https://github.com/Ashersun1207/entropybot/releases");
+});
+
+it("says up to date when the release tag is not newer", async () => {
+  fixture.tag = "entropybot-v0.2.0";
+  const updater = await import("./updater.mjs");
+  updater.registerUpdaterIpc({ pageAllowed: () => true });
+  await fixture.handlers.get("update:check")({});
+  expect(fixture.handlers.get("update:get-state")({}).status).toBe("idle");
+  expect(fixture.open).not.toHaveBeenCalled();
 });

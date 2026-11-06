@@ -29,10 +29,21 @@ export function UpdatesRow({ title = t("settings.updates.title") }: { title?: st
   if (!s || !updater) return null;
   if (s.mode === "manual") {
     const chinese = activeLocale().startsWith("zh");
+    const available = s.status === "available";
+    const checking = s.status === "checking";
     return (
-      <SettingRow title={title} subtitle={chinese ? "entropybot 独立更新：下载安装包后替换应用，聊天与记忆保留。" : "entropybot updates: download and replace the app. Chats and memory are preserved."}>
-        <button className="ui-button" onClick={() => void updater.check()}>
-          {chinese ? "打开发布页面" : "Open Releases"}
+      <SettingRow
+        title={title}
+        subtitle={available
+          ? (chinese ? `有新版本 ${s.version}，下载安装包后替换应用。` : `Version ${s.version} is available; download and replace the app.`)
+          : (chinese ? "手动更新：只检查版本，不会自动下载或替换。" : "Manual updates: check only; nothing is downloaded or replaced.")}
+      >
+        <button className="ui-button" disabled={checking} onClick={() => void updater.check()}>
+          {checking
+            ? (chinese ? "正在检查…" : "Checking…")
+            : available
+              ? (chinese ? "打开发布页" : "Open Releases")
+              : (chinese ? "检查更新" : "Check for updates")}
         </button>
       </SettingRow>
     );

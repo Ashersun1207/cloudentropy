@@ -459,6 +459,7 @@ export interface UpdaterState {
   status:
     | "idle"
     | "checking"
+    | "available"
     | "downloading"
     /** downloaded bytes are being staged by the native macOS updater */
     | "preparing"
