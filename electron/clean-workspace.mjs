@@ -113,7 +113,7 @@ export function createCleanWorkspace({ dataDir, running, swap, allowed = () => t
         if (ownCopy()) return request(route, init);
         if ((init?.method ?? "GET").toUpperCase() === "GET") {
           if (route === "/api/move/freeze") return Response.json(marker());
-          if (route === "/.well-known/openmausbot/environment") {
+          if (route === "/.well-known/entropybot/environment") {
             const id = readOwn("environment-id")?.trim();
             return Response.json(id ? { environmentId: id } : {});
           }

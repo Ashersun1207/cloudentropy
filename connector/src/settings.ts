@@ -5,21 +5,21 @@ export const CONNECTOR_VERSION = "1.0.0";
 
 /** Docker objects the connector owns. */
 export const NAMES = {
-  connector: "mausbot-connector",
-  connectorNext: "mausbot-connector-next",
-  home: "mausbot-home",
-  dataVolume: "mausbot-data",
-  stateVolume: "mausbot-connector",
-  snapshotVolume: "mausbot-snapshot",
-  backupPrefix: "mausbot-backup-",
+  connector: "entropybot-connector",
+  connectorNext: "entropybot-connector-next",
+  home: "entropybot-home",
+  dataVolume: "entropybot-data",
+  stateVolume: "entropybot-connector",
+  snapshotVolume: "entropybot-snapshot",
+  backupPrefix: "entropybot-backup-",
 } as const;
 
 export const LABELS = {
-  role: "com.mausbot.role",
-  instance: "com.mausbot.instance",
-  created: "com.mausbot.created",
-  image: "com.mausbot.image",
-  env: "com.mausbot.env",
+  role: "com.entropybot.role",
+  instance: "com.entropybot.instance",
+  created: "com.entropybot.created",
+  image: "com.entropybot.image",
+  env: "com.entropybot.env",
 } as const;
 
 /** Backups the connector keeps; a newer one replaces the oldest. */
@@ -27,12 +27,12 @@ export const BACKUPS_KEPT = 3;
 
 /** Inside the connector's container. */
 export const PATHS = {
-  state: process.env.MAUSBOT_STATE_DIR || "/state",
-  docker: process.env.MAUSBOT_DOCKER_SOCKET || "/var/run/docker.sock",
-  /** /etc/mausbot on the host, mounted read-only: the seccomp profile install.sh put there. */
-  hostConfig: process.env.MAUSBOT_HOST_CONFIG_DIR || "/etc/mausbot",
+  state: process.env.ENTROPYBOT_STATE_DIR || "/state",
+  docker: process.env.ENTROPYBOT_DOCKER_SOCKET || "/var/run/docker.sock",
+  /** /etc/entropybot on the host, mounted read-only: the seccomp profile install.sh put there. */
+  hostConfig: process.env.ENTROPYBOT_HOST_CONFIG_DIR || "/etc/entropybot",
   /** The connector's own copies, which install.sh installs from this image. */
-  profiles: process.env.MAUSBOT_PROFILES_DIR || "/app/profiles",
+  profiles: process.env.ENTROPYBOT_PROFILES_DIR || "/app/profiles",
 } as const;
 
 export const SECCOMP_FILE = "seccomp-omb-home.json";

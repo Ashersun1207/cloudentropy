@@ -147,7 +147,7 @@ export class FakeDocker implements Docker {
     if (container.status === "running") return;
     container.status = "running";
     container.startedAt = this.now();
-    const role = container.spec.Labels?.["com.mausbot.role"];
+    const role = container.spec.Labels?.["com.entropybot.role"];
     if (role === "helper") this.runHelper(container);
     else if (role === "home") this.onHomeStart?.(container);
     else if (role === "connector") await this.onConnectorStart?.(container);

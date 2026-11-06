@@ -143,7 +143,7 @@ const CHOICES = Object.freeze(["cloud", "link", "address"]);
  * page (`lists`) reads the list and opens or adds a place; ＋'s buying sheet also runs on a page `trusted` vouches for
  * (the rail's, or this computer's own). Any other page learns only whether the rail stands beside it (`beside`).
  * `places()` is railPlaces' list now; `open(id)` main's own switch; `add` the ＋ sheet's fixed actions; `account()` the
- * MausBot Cloud sign-in; `targets()` the pages told when something changed; `makeHome(id)` starts the move to a server
+ * Entropybot Cloud sign-in; `targets()` the pages told when something changed; `makeHome(id)` starts the move to a server
  * of the person's own (own-home-main.mjs `start`). `switchAccount(id)`: that account becomes the one in use (cloud-accounts.mjs).
  */
 export function installCloudRail({ ipcMain, guard, trusted, lists = trusted, beside = () => false, places, open, add, account, clipboard, openCloud, targets, makeHome = null, forget = null, switchAccount = null, t = nativeText.englishText.t }) {

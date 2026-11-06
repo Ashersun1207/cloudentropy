@@ -15,8 +15,8 @@ export interface ServiceSpec {
   label?: string;
 }
 
-export const SYSTEMD_UNIT_NAME = "openmausbot.service";
-export const LAUNCHD_LABEL = "com.openmausbot.serve";
+export const SYSTEMD_UNIT_NAME = "entropybot.service";
+export const LAUNCHD_LABEL = "com.entropybot.serve";
 
 function quoteSystemd(value: string): string {
   // systemd's ExecStart splits on whitespace and understands double quotes.
@@ -33,9 +33,9 @@ export function serviceCommand(spec: Pick<ServiceSpec, "node" | "script" | "serv
 
 export function systemdUnit(spec: ServiceSpec): string {
   const lines = [
-    "# Written by `openmausbot service install`. Re-run it to change the options.",
+    "# Written by `entropybot service install`. Re-run it to change the options.",
     "[Unit]",
-    `Description=OpenMausBot${spec.label ? ` (${spec.label})` : ""}`,
+    `Description=Entropybot${spec.label ? ` (${spec.label})` : ""}`,
     "After=network-online.target",
     "Wants=network-online.target",
     "",
@@ -106,7 +106,7 @@ export function launchdPlist(spec: ServiceSpec): string {
 export function unstableInstallWarning(script: string): string | null {
   const normalized = script.replace(/\\/g, "/");
   if (/\/_npx\//.test(normalized) || /\/\.npm\/_npx\//.test(normalized)) {
-    return `this command runs from an npx cache (${dirname(script)}), which npm may delete at any time. Install it permanently first (npm install -g openmausbot) and run \`openmausbot service install\` from that install.`;
+    return `this command runs from an npx cache (${dirname(script)}), which npm may delete at any time. Install it permanently first (npm install -g entropybot) and run \`entropybot service install\` from that install.`;
   }
   return null;
 }
@@ -133,8 +133,8 @@ export function servicePlan(platform: NodeJS.Platform, dataDir: string, home = h
   return null;
 }
 
-export const SENTINEL_LAUNCHD_LABEL = "com.openmausbot.sentinel";
-export const SENTINEL_SYSTEMD_NAME = "openmausbot-sentinel";
+export const SENTINEL_LAUNCHD_LABEL = "com.entropybot.sentinel";
+export const SENTINEL_SYSTEMD_NAME = "entropybot-sentinel";
 export const SENTINEL_INTERVAL_SECONDS = 120;
 
 export type SentinelServiceSpec = Pick<ServiceSpec, "node" | "script" | "dataDir" | "home"> & {
@@ -148,10 +148,10 @@ export function shippedSentinelCli(
   platform: NodeJS.Platform, home: string, exists: (path: string) => boolean, hasSentinel: (script: string) => boolean = () => true,
 ): { node: string; script: string } | null {
   const candidates = platform === "darwin"
-    ? ["/Applications/OpenMausBot.app", join(home, "Applications", "OpenMausBot.app")].map((app) => ({
-      node: join(app, "Contents", "MacOS", "OpenMausBot"), script: join(app, "Contents", "Resources", "server", "openmausbot.js"),
+    ? ["/Applications/Entropybot.app", join(home, "Applications", "Entropybot.app")].map((app) => ({
+      node: join(app, "Contents", "MacOS", "Entropybot"), script: join(app, "Contents", "Resources", "server", "entropybot.js"),
     }))
-    : platform === "linux" ? [{ node: "/opt/OpenMausBot/openmausbot", script: "/opt/OpenMausBot/resources/server/openmausbot.js" }] : [];
+    : platform === "linux" ? [{ node: "/opt/Entropybot/entropybot", script: "/opt/Entropybot/resources/server/entropybot.js" }] : [];
   return candidates.find((cli) => exists(cli.node) && exists(cli.script) && hasSentinel(cli.script)) ?? null;
 }
 
@@ -216,9 +216,9 @@ function systemdQuoted(value: string, command = false): string {
 export function sentinelSystemdService(spec: SentinelServiceSpec): string {
   for (const [label, value] of [["home", spec.home], ["node", spec.node], ["script", spec.script], ["data dir", spec.dataDir], ["output", spec.out]] as const) assertUnitValue(label, value);
   return [
-    "# Written by `openmausbot service install --sentinel`. Started by its timer.",
+    "# Written by `entropybot service install --sentinel`. Started by its timer.",
     "[Unit]",
-    "Description=OpenMausBot Sentinel health scan",
+    "Description=Entropybot Sentinel health scan",
     "",
     "[Service]",
     "Type=oneshot",
@@ -233,9 +233,9 @@ export function sentinelSystemdService(spec: SentinelServiceSpec): string {
 
 export function sentinelSystemdTimer(): string {
   return [
-    "# Written by `openmausbot service install --sentinel`.",
+    "# Written by `entropybot service install --sentinel`.",
     "[Unit]",
-    "Description=Run the OpenMausBot Sentinel health scan every two minutes",
+    "Description=Run the Entropybot Sentinel health scan every two minutes",
     "",
     "[Timer]",
     `OnBootSec=${SENTINEL_INTERVAL_SECONDS}s`,
@@ -313,6 +313,6 @@ export function currentUser(): string {
   try {
     return userInfo().username;
   } catch {
-    return process.env.USER || process.env.USERNAME || "openmausbot";
+    return process.env.USER || process.env.USERNAME || "entropybot";
   }
 }

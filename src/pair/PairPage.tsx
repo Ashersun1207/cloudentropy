@@ -35,7 +35,7 @@ export function pairIntro({ mode, sent, email, cloudHome }: { mode: "email" | "c
 export function pairTitle(environment: EnvironmentDescriptor | null, mode: "email" | "code" | null): string {
   if (environment?.capabilities.cloudTeam) return environment.label;
   if (environment?.capabilities.cloudHome) return t("pair.myCloud");
-  return t(mode === "email" ? "pair.signInTo" : "pair.connectTo", { name: environment?.label ?? t("pair.thisOpenMausBot", { app: productName() }) });
+  return t(mode === "email" ? "pair.signInTo" : "pair.connectTo", { name: environment?.label ?? t("pair.thisEntropybot", { app: productName() }) });
 }
 
 export function PairPage({ initialCode, initialEmail = null, reason }: { initialCode: string | null; initialEmail?: string | null; reason?: string }) {
@@ -66,7 +66,7 @@ export function PairPage({ initialCode, initialEmail = null, reason }: { initial
   }, []);
 
   useEffect(() => {
-    void fetch("/.well-known/openmausbot/environment")
+    void fetch("/.well-known/entropybot/environment")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: EnvironmentDescriptor | null) => {
         setEnvironment(d);
@@ -123,7 +123,7 @@ export function PairPage({ initialCode, initialEmail = null, reason }: { initial
       <div className="absolute left-3 top-12 max-w-[280px]"><DesktopWorkspaceSwitcher /></div>
       <div className="w-full max-w-[420px]">
         {opening ? (
-          <p role="status" className="text-[20px] font-semibold">{cloudHome ? t("pair.openingCloud") : t("pair.connectingTo", { name: environment?.label ?? t("pair.thisOpenMausBot") })}</p>
+          <p role="status" className="text-[20px] font-semibold">{cloudHome ? t("pair.openingCloud") : t("pair.connectingTo", { name: environment?.label ?? t("pair.thisEntropybot") })}</p>
         ) : <>
         <h1 className="text-[20px] font-semibold">{pairTitle(environment, mode)}</h1>
         <p className="mt-1.5 text-[14px] leading-relaxed text-ink-secondary">

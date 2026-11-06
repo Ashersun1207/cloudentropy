@@ -181,7 +181,7 @@ export function ConnectedWorkspacesSettings() {
         <p className="text-[12px] leading-relaxed text-ink-secondary">{t("servers.connect.help")}</p>
         <details className="text-[12px] text-ink-secondary"><summary className="cursor-pointer">{t("servers.connect.needCode")}</summary>
           <p className="mt-2">{t("servers.connect.runThis")}</p>
-          <code className="mt-1 block select-all break-words rounded-md bg-inset px-2 py-2 text-ink">npx openmausbot pair --label "My desktop"</code>
+          <code className="mt-1 block select-all break-words rounded-md bg-inset px-2 py-2 text-ink">npx entropybot pair --label "My desktop"</code>
         </details>
         {error && <p role="alert" className="text-[12px] text-danger">{error}</p>}
         <button type="submit" disabled={busy || !address.trim()} className="flex w-fit items-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-medium text-accent-ink disabled:opacity-50">

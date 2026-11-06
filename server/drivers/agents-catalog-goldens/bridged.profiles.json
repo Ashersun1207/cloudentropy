@@ -496,7 +496,7 @@
       "use_tool"
     ]
   },
-  "default+mausbot": {
+  "default+entropybot": {
     "bytes": 17538,
     "sha256": "372d2580c54c1890ca1e06cbc713911adb5946b463002db1a943d965858c5bf8",
     "tools": [
@@ -518,7 +518,7 @@
       "use_tool"
     ]
   },
-  "skills+shared+voice+mausbot": {
+  "skills+shared+voice+entropybot": {
     "bytes": 18386,
     "sha256": "8aec2a285e436bec7cfd7538b248a208670e29bde9613276edb4defa14d78ef6",
     "tools": [

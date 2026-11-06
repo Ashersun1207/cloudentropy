@@ -92,7 +92,7 @@ export interface HomeOptions {
   state: StateStore;
   log: Log;
   readHealth: HealthRead;
-  /** The seccomp profile install.sh put in /etc/mausbot, as JSON text. */
+  /** The seccomp profile install.sh put in /etc/entropybot, as JSON text. */
   seccomp: () => string;
   /** Free bytes where Docker keeps its volumes. */
   diskFree: () => number;
@@ -341,7 +341,7 @@ export class Home {
         const sent = await this.options.transfer.upload(`${admin.origin}${EXPORT_PATH}/${jobId}`, { authorization: `Bearer ${admin.token}` }, this.state.path(archive));
         return { bytes: sent.bytes, sha256: sent.sha256 };
       } catch (error) {
-        throw new JobFailure("transfer_failed", `The data could not be sent to MausBot (${errorText(error)}).`);
+        throw new JobFailure("transfer_failed", `The data could not be sent to Entropybot (${errorText(error)}).`);
       } finally {
         rmSync(this.state.path(archive), { force: true });
         this.finish({});
@@ -511,7 +511,7 @@ export class Home {
     } catch (error) {
       const message = errorText(error);
       if (/port is already allocated|address already in use/i.test(message)) {
-        throw new JobFailure("port_in_use", `Port ${HOME_PORT} on this server's loopback is used by another program, and MausBot's home needs it.`);
+        throw new JobFailure("port_in_use", `Port ${HOME_PORT} on this server's loopback is used by another program, and Entropybot's home needs it.`);
       }
       if (error instanceof DockerError && /apparmor|seccomp/i.test(message)) {
         throw new JobFailure("box_unavailable", "The bot box's security profiles are not installed on this server. Run the install command again to repair it.");
@@ -532,7 +532,7 @@ export class Home {
     if ((await this.docker.containersUsing(NAMES.dataVolume)).some((container) => container.State === "running" || container.State === "paused")) return;
     const cleared = await this.helper(image, [DATA], [
       "find", "/data", "-maxdepth", "3", "(",
-      "-path", "/data/.openmausbot/openmausbot-server.lease*", "-o", "-path", "/data/.openmausbot/.openmausbot-server-child/openmausbot-server.lease",
+      "-path", "/data/.entropybot/entropybot-server.lease*", "-o", "-path", "/data/.entropybot/.entropybot-server-child/entropybot-server.lease",
       ")", "-print", "-delete",
     ], DELETE_CAPS);
     const paths = cleared.output.split("\n").map((line) => line.trim()).filter((line) => line.startsWith("/data/"));
@@ -569,7 +569,7 @@ export class Home {
   }
 
   private async helper(image: string, mounts: Mount[], command: string[], caps: string[]): Promise<{ code: number; output: string }> {
-    const name = `mausbot-helper-${randomBytes(4).toString("hex")}`;
+    const name = `entropybot-helper-${randomBytes(4).toString("hex")}`;
     await this.docker.createContainer(name, helperSpec(image, mounts, command, caps));
     try {
       await this.docker.startContainer(name);

@@ -274,7 +274,7 @@ export function createControlPlaneClient({
       });
       if (
         payload.ok !== true ||
-        payload.service !== "openmausbot-control-plane"
+        payload.service !== "entropybot-control-plane"
       ) {
         throw new ControlPlaneError("control_plane_unavailable");
       }

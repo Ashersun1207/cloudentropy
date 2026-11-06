@@ -35,6 +35,8 @@ RUN cp /usr/bin/caddy /caddy
 # host's own; only the Data engine's native tree below follows the image's CPU.
 FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS build
 WORKDIR /src
+# Vite/tsc on this repo exceed Node's 2 GB default heap on small builders.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 # pinned to package.json#packageManager; corepack is being removed from Node
 RUN npm install -g pnpm@10.33.0
 # The image never runs Electron, so skip its ~100MB postinstall download.

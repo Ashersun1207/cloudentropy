@@ -1134,7 +1134,7 @@
       "mcp_server"
     ]
   },
-  "default+mausbot": {
+  "default+entropybot": {
     "bytes": 59991,
     "sha256": "e1edab1ae4b38a0cec81b901df0cbe413f0f7e7790d9918d9fd3b50926112fbc",
     "tools": [
@@ -1187,7 +1187,7 @@
       "mark_notifications_read"
     ]
   },
-  "skills+shared+voice+mausbot": {
+  "skills+shared+voice+entropybot": {
     "bytes": 65856,
     "sha256": "dfa20b6735c189a0d056ecd54d8fdb8957b8f0db263454f039d90dc636a9c0c9",
     "tools": [

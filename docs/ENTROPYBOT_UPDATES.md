@@ -5,11 +5,11 @@
 Entropybot 使用自己的 GitHub Releases：
 https://github.com/Ashersun1207/entropybot/releases
 
-当前分发模式为手动更新。设置 → 更新 → 打开发布页面；下载 DMG 后退出应用，将新 Entropybot.app 拖入 Applications 替换。不会在后台下载、退出时安装或通过官方 OpenMausBot 更新源替换应用。
+当前分发模式为手动更新。设置 → 更新 → 打开发布页面；下载 DMG 后退出应用，将新 Entropybot.app 拖入 Applications 替换。不会在后台下载、退出时安装或通过官方 Entropybot 更新源替换应用。
 
 应用身份：`ai.entropybot.desktop`，产品名 Entropybot。版本独立从 `0.2.0` 开始，和上游 `0.1.141` 不混用。
 
-工作区继续使用 `~/.openmausbot`（或已配置的 OMB_DATA_DIR），包括 bots、messages.db、记忆、向量及本机配置。Electron 的窗口配置和加密凭证继续使用原来的 `~/Library/Application Support/openmausbot`。版本升级不会清空这些目录；不要同时运行 Entropybot 和旧 OpenMausBot 操作同一工作区。
+工作区继续使用 `~/.entropybot`（或已配置的 OMB_DATA_DIR），包括 bots、messages.db、记忆、向量及本机配置。Electron 的窗口配置和加密凭证继续使用原来的 `~/Library/Application Support/entropybot`。版本升级不会清空这些目录；不要同时运行 Entropybot 和旧 Entropybot 操作同一工作区。
 
 首次迁移应退出旧应用、备份整个工作区和 Electron profile，再启动 Entropybot。钥匙串/辅助功能授权可能因新的 bundle ID 或签名重新询问。不要把这些备份上传仓库或 Release。恢复官方包并不能自动回滚数据库；需要恢复匹配版本的数据备份。
 

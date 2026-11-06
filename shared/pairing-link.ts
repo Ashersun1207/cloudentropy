@@ -1,4 +1,4 @@
-// The one `openmausbot://pair` link builder, read by the Android and iOS
+// The one `entropybot://pair` link builder, read by the Android and iOS
 // scanners (`PairingInvite.parse`). Every value is written with
 // encodeURIComponent, so a space is `%20`.
 
@@ -165,5 +165,5 @@ export function phonePairingLink({
   const secretKey = validSecretPublicKey(secretPublicKey);
   if (secretKey) fields.push(["secretKey", secretKey]);
 
-  return `openmausbot://pair?${fields.map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&")}`;
+  return `entropybot://pair?${fields.map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&")}`;
 }

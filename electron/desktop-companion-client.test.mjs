@@ -47,7 +47,7 @@ describe("desktop companion endpoint", () => {
     ]);
     expect(desktopCompanionRendererArguments("http://127.0.0.1:8798", access)).toEqual([
       "--omb-local-origin=http://127.0.0.1:8798",
-      "--openmausbot-remote-client",
+      "--entropybot-remote-client",
     ]);
   });
 
@@ -58,63 +58,63 @@ describe("desktop companion endpoint", () => {
     expect(normalizeTailscaleCompanionEndpoint("http://HOST.example-tailnet.ts.net:9910/")).toBe(
       "http://host.example-tailnet.ts.net:9910",
     );
-    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.openmausbot.com`)).toBe(
-      `https://${LABEL}.openmausbot.com`,
+    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.bot.cloudentropy.ai`)).toBe(
+      `https://${LABEL}.bot.cloudentropy.ai`,
     );
-    expect(normalizeDesktopCompanionEndpoint(`${LABEL}.openmausbot.com`)).toBe(
-      `https://${LABEL}.openmausbot.com`,
+    expect(normalizeDesktopCompanionEndpoint(`${LABEL}.bot.cloudentropy.ai`)).toBe(
+      `https://${LABEL}.bot.cloudentropy.ai`,
     );
     // The control plane's second Cloudflare account gives addresses here.
-    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.mausbot.si`)).toBe(
-      `https://${LABEL}.mausbot.si`,
+    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.entropybot.si`)).toBe(
+      `https://${LABEL}.entropybot.si`,
     );
     expect(normalizeDesktopCompanionEndpoint(` ${LABEL.toUpperCase()}.Mausbot.SI/ `)).toBe(
-      `https://${LABEL}.mausbot.si`,
+      `https://${LABEL}.entropybot.si`,
     );
     for (const endpoint of [
       "https://unrelated.example.com",
-      `http://${LABEL}.openmausbot.com`,
+      `http://${LABEL}.bot.cloudentropy.ai`,
       "http://10.0.0.4:8810",
       "http://host.local:8810",
       "https://10.0.0.4",
       "http://host.example-tailnet.ts.net/path",
-      `https://${LABEL}.openmausbot.com/path`,
+      `https://${LABEL}.bot.cloudentropy.ai/path`,
       "http://user@host.example-tailnet.ts.net",
       "http://host.example-tailnet.ts.net.evil.test",
-      `https://${LABEL}.openmausbot.com.evil.test`,
-      `http://${LABEL}.mausbot.si`,
-      `https://${LABEL}.mausbot.si/path`,
-      `https://${LABEL}.mausbot.si.evil.test`,
-      "https://mausbot.si",
-      "mausbot.si",
-      "https://evilmausbot.si",
-      `https://${LABEL}.evilmausbot.si`,
-      "https://www.mausbot.si",
-      "https://app.mausbot.si",
-      "https://accounts.openmausbot.com",
-      "https://c-opaque.openmausbot.com",
-      "https://c-opaque.mausbot.si",
-      `https://${LABEL.slice(0, -1)}.mausbot.si`,
-      `https://${LABEL}0.mausbot.si`,
-      `https://${LABEL.replace("c-", "d-")}.mausbot.si`,
-      `https://${LABEL}.extra.mausbot.si`,
-      `https://www.${LABEL}.mausbot.si`,
+      `https://${LABEL}.bot.cloudentropy.ai.evil.test`,
+      `http://${LABEL}.entropybot.si`,
+      `https://${LABEL}.entropybot.si/path`,
+      `https://${LABEL}.entropybot.si.evil.test`,
+      "https://entropybot.si",
+      "entropybot.si",
+      "https://evilentropybot.si",
+      `https://${LABEL}.evilentropybot.si`,
+      "https://www.entropybot.si",
+      "https://app.entropybot.si",
+      "https://accounts.bot.cloudentropy.ai",
+      "https://c-opaque.bot.cloudentropy.ai",
+      "https://c-opaque.entropybot.si",
+      `https://${LABEL.slice(0, -1)}.entropybot.si`,
+      `https://${LABEL}0.entropybot.si`,
+      `https://${LABEL.replace("c-", "d-")}.entropybot.si`,
+      `https://${LABEL}.extra.entropybot.si`,
+      `https://www.${LABEL}.entropybot.si`,
     ]) {
       expect(normalizeDesktopCompanionEndpoint(endpoint), endpoint).toBe("");
     }
   });
 
   it("validates, adds, and removes the encrypted credential document field", () => {
-    const hostedAccess = { ...access, endpoint: `https://${LABEL}.openmausbot.com` };
+    const hostedAccess = { ...access, endpoint: `https://${LABEL}.bot.cloudentropy.ai` };
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: hostedAccess })).toEqual(
       hostedAccess,
     );
-    const secondDomain = { ...access, endpoint: `https://${LABEL}.mausbot.si` };
+    const secondDomain = { ...access, endpoint: `https://${LABEL}.entropybot.si` };
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: secondDomain })).toEqual(
       secondDomain,
     );
     expect(
-      desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: { ...access, endpoint: "https://app.mausbot.si" } }),
+      desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: { ...access, endpoint: "https://app.entropybot.si" } }),
     ).toBeNull();
 
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: access })).toEqual(access);
@@ -165,40 +165,40 @@ describe("desktop companion pairing", () => {
       }),
     );
     const paired = await pairDesktopCompanion({
-      endpoint: `https://${LABEL}.openmausbot.com`,
+      endpoint: `https://${LABEL}.bot.cloudentropy.ai`,
       code: "654321",
       deviceName: "Desktop client",
       requestId: "request-https-01",
       fetchImpl,
     });
-    expect(paired).toEqual({ ...access, endpoint: `https://${LABEL}.openmausbot.com` });
+    expect(paired).toEqual({ ...access, endpoint: `https://${LABEL}.bot.cloudentropy.ai` });
     expect(fetchImpl).toHaveBeenCalledWith(
-      `https://${LABEL}.openmausbot.com/api/pair`,
+      `https://${LABEL}.bot.cloudentropy.ai/api/pair`,
       expect.objectContaining({ method: "POST" }),
     );
 
     const secondDomain = await pairDesktopCompanion({
-      endpoint: `${LABEL}.mausbot.si`,
+      endpoint: `${LABEL}.entropybot.si`,
       code: "654321",
       deviceName: "Desktop client",
       requestId: "request-https-02",
       fetchImpl,
     });
-    expect(secondDomain).toEqual({ ...access, endpoint: `https://${LABEL}.mausbot.si` });
+    expect(secondDomain).toEqual({ ...access, endpoint: `https://${LABEL}.entropybot.si` });
     expect(fetchImpl).toHaveBeenLastCalledWith(
-      `https://${LABEL}.mausbot.si/api/pair`,
+      `https://${LABEL}.entropybot.si/api/pair`,
       expect.objectContaining({ method: "POST" }),
     );
 
     await expect(
       pairDesktopCompanion({
-        endpoint: "https://app.mausbot.si",
+        endpoint: "https://app.entropybot.si",
         code: "654321",
         deviceName: "Desktop client",
         requestId: "request-https-03",
         fetchImpl,
       }),
-    ).rejects.toThrow("OpenMausBot HTTPS companion address");
+    ).rejects.toThrow("Entropybot HTTPS companion address");
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
