@@ -1,0 +1,69 @@
+name: Cloudentropy macOS release
+
+on:
+  push:
+    tags: ["cloudentropy-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudentropy-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'Ashersun1207/cloudentropy'
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify tag and release identity
+        id: version
+        run: |
+          node scripts/cloudentropy-release.mjs check
+          echo "tag=cloudentropy-v$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+      - run: pnpm typecheck
+      - name: Verify updater boundary and migration contracts
+        run: pnpm exec vitest run electron/cloudentropy-updater.test.mjs electron/updater.test.mjs server/local-computer.test.ts server/context-rebuild.test.ts server/drivers/chat-size-limit.test.ts server/recall.test.ts server/memory-embeddings.test.ts
+      - name: Build Apple silicon application
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm package:cloudentropy:mac
+      - name: Verify bundle identity and signature
+        run: |
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' release/mac-arm64/Cloudentropy.app/Contents/Info.plist)" = ai.cloudentropy.desktop
+          codesign --verify --deep --strict release/mac-arm64/Cloudentropy.app
+          test -f release/mac-arm64/Cloudentropy.app/Contents/Resources/server/server/memory-embeddings.js
+          node scripts/cloudentropy-release.mjs manifest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudentropy-macos-arm64
+          path: |
+            release/Cloudentropy-*.dmg
+            release/Cloudentropy-*.zip
+            release/SHA256SUMS
+            release/cloudentropy-build.json
+          if-no-files-found: error
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true || { echo "Published releases are immutable; bump the version."; exit 1; }
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --draft --title "Cloudentropy ${TAG#cloudentropy-v}" --notes-file docs/CLOUDENTROPY_RELEASE_NOTES.md
+          fi
+          gh release upload "$TAG" release/Cloudentropy-*.dmg release/Cloudentropy-*.zip release/SHA256SUMS release/cloudentropy-build.json --clobber

@@ -1,6 +1,7 @@
 // macOS auto-update requires a signed app, so this runs only when packaged. electron-updater is vendored
 // because the packaged app ships no node_modules.
-import { app, clipboard, ipcMain } from "electron";
+import { app, clipboard, ipcMain, shell } from "electron";
+import { RELEASES_URL, UPDATE_MODE } from "./update-policy.mjs";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -46,6 +47,7 @@ function quietRecord() {
 }
 
 function launched() {
+  if (UPDATE_MODE === "manual") return { hidden: false, updated: null };
   launch ??= app.isPackaged && QUIET_PLATFORMS.has(process.platform)
     ? launchAfter(quietRecord(), { version: app.getVersion() })
     : { hidden: false, updated: null };
@@ -63,6 +65,7 @@ export function reopenedOutOfSight() {
 function view() {
   return {
     ...state,
+    ...(UPDATE_MODE === "manual" ? { mode: "manual", releasesUrl: RELEASES_URL } : {}),
     ...(quiet && state.status === "downloaded" ? { installsByItself: quiet.promises(state.version) } : {}),
     ...(launch?.updated ? { updated: launch.updated } : {}),
   };
@@ -131,8 +134,13 @@ export function registerUpdaterIpc({ pageAllowed: allowed }) {
     return handler();
   };
   ipcMain.handle("update:get-state", guarded("update:get-state", view));
-  ipcMain.handle("update:check", guarded("update:check", () => updaterCoordinator?.check(true)));
-  ipcMain.handle("update:install", guarded("update:install", () => updaterCoordinator?.install()));
+  ipcMain.handle("update:check", guarded("update:check", () => UPDATE_MODE === "manual"
+    ? shell.openExternal(RELEASES_URL)
+    : updaterCoordinator?.check(true)));
+  ipcMain.handle("update:install", guarded("update:install", () => {
+    if (UPDATE_MODE === "manual") throw new Error("Install cloudentropy updates from GitHub Releases.");
+    return updaterCoordinator?.install();
+  }));
   ipcMain.handle("update:seen", guarded("update:seen", () => {
     if (!launch?.updated) return;
     updateSeen(quietRecord());
@@ -148,6 +156,11 @@ export function attachUpdaterWindow(mainWindow) {
 
 /** `signals` (quietSignals): what tells a quiet moment; without them a downloaded update installs only on Restart or quit. */
 export function startUpdater(signals = null) {
+  if (UPDATE_MODE === "manual") {
+    updaterCoordinator = null;
+    setState({ status: "idle" });
+    return;
+  }
   if (!app.isPackaged) {
     updaterCoordinator = null;
     setState({ status: "idle" });

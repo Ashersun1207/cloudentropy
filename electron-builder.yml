@@ -1,6 +1,6 @@
-appId: com.openmausbot.app
-productName: OpenMausBot
-artifactName: OpenMausBot-${version}-${arch}.${ext}
+appId: ai.cloudentropy.desktop
+productName: Cloudentropy
+artifactName: Cloudentropy-${version}-${arch}.${ext}
 
 protocols:
   - name: OpenMausBot package install
@@ -15,8 +15,8 @@ protocols:
 # stranded on its installed version.
 publish:
   - provider: github
-    owner: milind-soni
-    repo: OpenMausBot
+    owner: Ashersun1207
+    repo: cloudentropy
 
 directories:
   buildResources: build
@@ -95,6 +95,7 @@ extraResources:
     to: android-platform-tools
 
 mac:
+  identity: "-"
   # Two single-arch artifacts rather than one universal binary: the app is
   # architecture-specific, and universal would make users download both halves.
   # electron-updater picks by filename (arm64-marked files on Apple silicon,
@@ -143,7 +144,7 @@ mac:
   notarize: false
 
 dmg:
-  sign: true
+  sign: false
   # ${arch} is load-bearing: without it the x64 dmg silently overwrites
   # the arm64 one when both arches build (this section overrides both the
   # top-level and mac-level artifactName, so it must carry the arch itself)
