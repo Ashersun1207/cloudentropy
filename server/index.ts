@@ -7855,7 +7855,7 @@ async function beginTurn(
       const replayBytes = cfg.context?.rebuildBytes ?? adaptiveReplayBytes(contextWindowFor(model, instance.models));
       const selection = selectReplay(context, {
         budgetBytes: replayBytes,
-        maxMessages: cfg.context?.rebuildBytes ? undefined : adaptiveReplayMessages(replayBytes),
+        maxMessages: adaptiveReplayMessages(replayBytes),
         excludedIds: skipTranscript, compaction: record, tools: replayToolCalls(activeMessages, cfg.context),
       });
       if (selection.dropped > 0) {
