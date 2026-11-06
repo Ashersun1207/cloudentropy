@@ -65,8 +65,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
-            git fetch --depth=1 origin "refs/tags/$TAG:refs/tags/$TAG"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            test "$(git rev-parse "$TAG^{commit}")" = "$GITHUB_SHA" || { echo "Tag points at a different source commit; bump the version."; exit 1; }
+          elif git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+            git fetch --depth=1 --force origin "refs/tags/$TAG:refs/tags/$TAG"
             test "$(git rev-parse "$TAG^{commit}")" = "$GITHUB_SHA" || { echo "Tag points at a different source commit; bump the version."; exit 1; }
           else
             git tag "$TAG" "$GITHUB_SHA"
