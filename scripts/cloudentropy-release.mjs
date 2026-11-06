@@ -15,7 +15,7 @@ if (process.env.GITHUB_REF_TYPE === "tag" && process.env.GITHUB_REF_NAME !== tag
   throw new Error(`Tag must match package version: ${tag}`);
 }
 if (process.argv[2] === "manifest") {
-  const files = readdirSync("release").filter(name => name.startsWith(`Cloudentropy-${pkg.version}-`) && /\.(dmg|zip)$/.test(name)).sort();
+  const files = readdirSync("release").filter(name => ["dmg", "zip"].some(ext => name === `Cloudentropy-${pkg.version}-arm64.${ext}`)).sort();
   if (!["dmg", "zip"].every(ext => files.includes(`Cloudentropy-${pkg.version}-arm64.${ext}`))) {
     throw new Error("Both the Apple silicon DMG and ZIP must exist before a release is prepared");
   }

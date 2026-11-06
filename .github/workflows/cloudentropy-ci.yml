@@ -24,4 +24,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: node scripts/cloudentropy-release.mjs check
       - run: pnpm typecheck
+      - run: pnpm exec vitest run scripts/testing/file-size-ratchet.test.ts src/locales/vocabulary.test.ts server/update-check.test.ts
       - run: pnpm exec vitest run electron/cloudentropy-updater.test.mjs electron/updater.test.mjs server/local-computer.test.ts server/context-rebuild.test.ts server/drivers/chat-size-limit.test.ts server/recall.test.ts server/memory-embeddings.test.ts

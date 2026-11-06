@@ -53,6 +53,13 @@ describe("server update check", () => {
     expect(fetch).toHaveBeenCalledWith(LATEST_RELEASE_URL, expect.anything());
   });
 
+  it("recognizes cloudentropy version tags from its own release source", async () => {
+    const fetch = vi.fn(async () => release("cloudentropy-v0.2.1"));
+    const check = createUpdateChecker({ current: "0.2.0", install: "git", fetch });
+    expect(await check()).toMatchObject({ latest: "0.2.1", available: true });
+    expect(fetch).toHaveBeenCalledWith("https://api.github.com/repos/Ashersun1207/cloudentropy/releases/latest", expect.anything());
+  });
+
   it("says up to date, and asks GitHub at most once an hour", async () => {
     let now = 0;
     const fetch = vi.fn(async () => release("v0.1.92"));
