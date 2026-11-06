@@ -35,6 +35,15 @@ node --experimental-strip-types scripts/capture-site-app.ts
 
 仅发布 `index.html` 与 `assets/`。不要上传此目录之外的文件；`/opt/entropybot/private` 为授权后的页面，`/opt/entropybot/deploy` 保存现有 Caddy 和 Google 授权代理配置。
 
+授权代理通过 `network_mode: service:caddy` 共享 Caddy 的网络环境。若 Caddy 重启后登录入口返回 502，应检查代理是否仍连接当前网络环境。需要重建代理时，必须显式加载保存在 Compose 目录外的环境文件，避免以空凭证启动：
+
+```sh
+cd /opt/entropybot/deploy
+docker compose --env-file /opt/entropybot/.env up -d --no-deps --force-recreate oauth2-proxy
+```
+
+不要将服务器环境文件或凭证提交到仓库。
+
 发布后核对主页及三张图片的 HTTP 状态、内容哈希、明暗主题切换和图片预览，并检查 Google 授权入口仍重定向到 Google。完整登录需要用户本人完成授权。
 
 ## 页面行为
